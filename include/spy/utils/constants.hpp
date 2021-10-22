@@ -1,0 +1,9 @@
+#ifndef SPY_CONSTANTS
+#define SPY_CONSTANTS
+
+#define SPACES_INDENTATION 4
+
+#define ERR_INDENTATION 0
+#define ERR_NO_TOKENS 1
+
+#endif

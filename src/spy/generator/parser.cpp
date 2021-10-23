@@ -1,60 +1,16 @@
 #include <spy/generator/parser.hpp>
 
-DATA null_data;
-
-TOKEN *create_token() { return create_token(_NONE, null_data, NULL); }
-
-TOKEN *create_token(int _type, DATA _data, TOKEN *_token) {
-  TOKEN *token = (TOKEN *)malloc(sizeof(TOKEN));
-  token->_type = _type;
-  token->_data = _data;
-  token->_next_token = _token;
-  return token;
-}
-
-int is_number(char c) { return c <= '9' && c >= '0'; }
-
-int is_alphabet(char c) {
-  return (c <= 'z' && c >= 'a') || (c <= 'Z' && c >= 'A');
-}
-
-int is_symbol(char c) {
-  return ((c <= 47 && c >= 34) || (c <= 64 && c >= 58) ||
-          (c <= 96 && c >= 91) || (c <= 126 && c >= 123)) &&
-         c != '#';
-}
-
-void create_map_characters(char *token_map) {
-  token_map['+'] = _OP_ADD;
-  token_map['-'] = _OP_DIF;
-  token_map['*'] = _OP_MUL;
-  token_map['/'] = _OP_DIV;
-  token_map['{'] = _OPEN_CURLY_BRACKET;
-  token_map['}'] = _CLOSE_CURLY_BRACKET;
-  token_map['['] = _OPEN_SQUARE_BRACKET;
-  token_map[']'] = _CLOSE_SQUARE_BRACKET;
-  token_map['('] = _OPEN_ROUND_BRACKET;
-  token_map[')'] = _CLOSE_ROUND_BRACKET;
-  token_map[':'] = _COLON;
-  token_map[','] = _COMMA;
-  token_map['.'] = _DOT;
-  token_map['&'] = _OP_AND;
-  token_map['|'] = _OP_OR;
-  token_map['^'] = _OP_XOR;
-  token_map['~'] = _OP_NOT;
-  token_map['%'] = _OP_MOD;
-}
-
 Parser::Parser(string raw_code) {
   this->raw_code = raw_code;
   this->token = NULL;
+  this->curr_token = NULL;
 }
 
 void Parser::generate_tokens() {
   TOKEN *token = (TOKEN *)malloc(sizeof(TOKEN));
   int curr_idx = 0;
   char token_map[128];
-  char curr_chr, next_chr;
+  char curr_chr;
   int length = this->raw_code.length();
   int isreal;
   string tmp;
@@ -219,6 +175,39 @@ void Parser::generate_tokens() {
       else if (tmp == "False")
         token->_next_token = create_token(_FALSE, null_data, NULL);
 
+      else if (tmp == "import")
+        token->_next_token = create_token(_IMPORT, null_data, NULL);
+
+      else if (tmp == "with")
+        token->_next_token = create_token(_WITH, null_data, NULL);
+
+      else if (tmp == "as")
+        token->_next_token = create_token(_AS, null_data, NULL);
+
+      else if (tmp == "try")
+        token->_next_token = create_token(_TRY, null_data, NULL);
+
+      else if (tmp == "except")
+        token->_next_token = create_token(_EXCEPT, null_data, NULL);
+
+      else if (tmp == "raise")
+        token->_next_token = create_token(_RAISE, null_data, NULL);
+
+      else if (tmp == "assert")
+        token->_next_token = create_token(_ASSERT, null_data, NULL);
+
+      else if (tmp == "pass")
+        token->_next_token = create_token(_PASS, null_data, NULL);
+
+      else if (tmp == "break")
+        token->_next_token = create_token(_BREAK, null_data, NULL);
+
+      else if (tmp == "continue")
+        token->_next_token = create_token(_CONTINUE, null_data, NULL);
+
+      else if (tmp == "global")
+        token->_next_token = create_token(_GLOBAL, null_data, NULL);
+
       else {
         d_._string = new char[tmp.length() + 1];
         strcpy(d_._string, tmp.c_str());
@@ -261,6 +250,17 @@ void Parser::generate_tokens() {
       token = token->_next_token;
     }
 
+    else if (curr_chr == '*') {
+      if ((curr_idx + 1) < length && this->raw_code[curr_idx + 1] == '*') {
+        curr_idx += 1;
+        token->_next_token = create_token(_OP_POW, null_data, NULL);
+      } else
+        token->_next_token = create_token(_OP_MUL, null_data, NULL);
+
+      curr_idx += 1;
+      token = token->_next_token;
+    }
+
     else if (curr_chr == '\n') {
       curr_idx += 1;
       flag_newline = 1;
@@ -282,17 +282,122 @@ void Parser::generate_tokens() {
 }
 
 AST *Parser::generate_ast() {
-  // TODO
   if (this->token == NULL)
     assert_error(ERR_NO_TOKENS);
 
-  return NULL;
+  this->curr_token = this->token;
+  AST *ast = new AST(AST_MODULE, NULL);
+
+  while (this->curr_token != NULL)
+    ast->add_child(this->parser_stmt());
+
+  this->curr_token = this->token;
+
+  return ast;
 }
 
 AST *Parser::parse() {
   this->generate_tokens();
   return this->generate_ast();
 }
+
+AST *Parser::parse_stmt() {
+  AST *ast = new AST(AST_STMT, NULL);
+
+  if (this->curr_token->_type == _DEF)
+    ast->add_child(this->parse_functiondef());
+
+  else if (this->curr_token->_type == _CLASS)
+    ast->add_child(this->parse_classdef());
+
+  else if (this->curr_token->_type == _RETURN)
+    ast->add_child(this->parse_return());
+
+  else if (this->curr_token->_type == _FOR)
+    ast->add_child(this->parse_for());
+
+  else if (this->curr_token->_type == _WHILE)
+    ast->add_child(this->parse_while());
+
+  else if (this->curr_token->_type == _IF)
+    ast->add_child(this->parse_if());
+
+  else if (this->curr_token->_type == _WITH)
+    ast->add_child(this->parse_with());
+
+  else if (this->curr_token->_type == _RAISE)
+    ast->add_child(this->parse_raise());
+
+  else if (this->curr_token->_type == _TRY)
+    ast->add_child(this->parse_try());
+
+  else if (this->curr_token->_type == _ASSERT)
+    ast->add_child(this->parse_assert());
+
+  else if (this->curr_token->_type == _IMPORT)
+    ast->add_child(this->parse_import());
+
+  else if (this->curr_token->_type == _GLOBAL)
+    ast->add_child(this->parse_global());
+
+  else if (this->curr_token->_type == _PASS)
+    ast->add_child(this->parse_pass());
+
+  else if (this->curr_token->_type == _BREAK)
+    ast->add_child(this->parse_break());
+
+  else if (this->curr_token->_type == _CONTINUE)
+    ast->add_child(this->parse_continue());
+
+  else if (is_expression(this->curr_token->_type))
+    ast->add_child(this->parse_expr());
+
+  return ast;
+}
+
+AST *Parser::parse_expr() {
+  AST *ast = new AST(AST_EXPR, NULL);
+
+  if (this->curr_token->_type == _LAMBDA)
+    ast->add_child(this->parse_lambda());
+
+  return ast;
+}
+
+AST *Parser::parse_functiondef() { return NULL; }
+AST *Parser::parse_classdef() { return NULL; }
+AST *Parser::parse_return() { return NULL; }
+AST *Parser::parse_assign() { return NULL; }
+AST *Parser::parse_augassign() { return NULL; }
+AST *Parser::parse_for() { return NULL; }
+AST *Parser::parse_while() { return NULL; }
+AST *Parser::parse_if() { return NULL; }
+AST *Parser::parse_with() { return NULL; }
+AST *Parser::parse_raise() { return NULL; }
+AST *Parser::parse_try() { return NULL; }
+AST *Parser::parse_assert() { return NULL; }
+AST *Parser::parse_import() { return NULL; }
+AST *Parser::parse_importfrom() { return NULL; }
+AST *Parser::parse_global() { return NULL; }
+AST *Parser::parse_pass() { return NULL; }
+AST *Parser::parse_break() { return NULL; }
+AST *Parser::parse_continue() { return NULL; }
+AST *Parser::parse_boolop() { return NULL; }
+AST *Parser::parse_namedexpr() { return NULL; }
+AST *Parser::parse_binop() { return NULL; }
+AST *Parser::parse_unaryop() { return NULL; }
+AST *Parser::parse_lambda() { return NULL; }
+AST *Parser::parse_ifexpr() { return NULL; }
+AST *Parser::parse_dict() { return NULL; }
+AST *Parser::parse_set() { return NULL; }
+AST *Parser::parse_listcomp() { return NULL; }
+AST *Parser::parse_setcomp() { return NULL; }
+AST *Parser::parse_dictcomp() { return NULL; }
+AST *Parser::parse_generatorexpr() { return NULL; }
+AST *Parser::parse_compare() { return NULL; }
+AST *Parser::parse_call() { return NULL; }
+AST *Parser::parse_joinedstr() { return NULL; }
+AST *Parser::parse_constant() { return NULL; }
 
 Parser *Parser::from_code_path(string code_path) {
   ifstream ifs;

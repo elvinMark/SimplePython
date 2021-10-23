@@ -3,6 +3,9 @@
 x=3
 y=3.45
 z="hello!"
+w = 3*5
+u = 2**10
+a = 2.5**4.8
 arr=[1,3.4,"hello!"]
 
 # Control Sequence

@@ -2,7 +2,8 @@
 
 DATA null_data;
 
-char token_type_map[61][30] = {"_EMPTY",
+char token_type_map[56][30] = {"_EMPTY",
+                               "_ENDL",
                                "_NONE",
                                "_DATA_INTEGER",
                                "_DATA_REAL",
@@ -18,16 +19,10 @@ char token_type_map[61][30] = {"_EMPTY",
                                "_RETURN",
                                "_LAMBDA",
                                "_IMPORT",
-                               "_WITH",
-                               "_AS",
-                               "_TRY",
-                               "_EXCEPT",
-                               "_RAISE",
-                               "_ASSERT",
+                               "_FROM",
                                "_PASS",
                                "_BREAK",
                                "_CONTINUE",
-                               "_GLOBAL",
                                "_AND",
                                "_OR",
                                "_NOT",
@@ -43,8 +38,6 @@ char token_type_map[61][30] = {"_EMPTY",
                                "_COLON",
                                "_COMMA",
                                "_DOT",
-                               "_QUOTE",
-                               "_DOUBLE_QUOTE",
                                "_START",
                                "_END",
                                "_ASSIGN",
@@ -55,6 +48,8 @@ char token_type_map[61][30] = {"_EMPTY",
                                "_OP_POW",
                                "_OP_GT",
                                "_OP_LT",
+                               "_OP_LTE",
+                               "_OP_GTE",
                                "_OP_EQUAL",
                                "_OP_AND",
                                "_OP_OR",
@@ -88,7 +83,6 @@ int is_symbol(char c) {
 void create_map_characters(char *token_map) {
   token_map['+'] = _OP_ADD;
   token_map['-'] = _OP_DIF;
-  //  token_map['*'] = _OP_MUL;
   token_map['/'] = _OP_DIV;
   token_map['{'] = _OPEN_CURLY_BRACKET;
   token_map['}'] = _CLOSE_CURLY_BRACKET;

@@ -7,7 +7,7 @@ Parser::Parser(string raw_code) {
 }
 
 void Parser::generate_tokens() {
-  TOKEN *token = (TOKEN *)malloc(sizeof(TOKEN));
+  TOKEN *token = create_token(_START, null_data, NULL);
   int curr_idx = 0;
   char token_map[128];
   char curr_chr;
@@ -178,23 +178,8 @@ void Parser::generate_tokens() {
       else if (tmp == "import")
         token->_next_token = create_token(_IMPORT, null_data, NULL);
 
-      else if (tmp == "with")
-        token->_next_token = create_token(_WITH, null_data, NULL);
-
-      else if (tmp == "as")
-        token->_next_token = create_token(_AS, null_data, NULL);
-
-      else if (tmp == "try")
-        token->_next_token = create_token(_TRY, null_data, NULL);
-
-      else if (tmp == "except")
-        token->_next_token = create_token(_EXCEPT, null_data, NULL);
-
-      else if (tmp == "raise")
-        token->_next_token = create_token(_RAISE, null_data, NULL);
-
-      else if (tmp == "assert")
-        token->_next_token = create_token(_ASSERT, null_data, NULL);
+      else if (tmp == "from")
+        token->_next_token = create_token(_FROM, null_data, NULL);
 
       else if (tmp == "pass")
         token->_next_token = create_token(_PASS, null_data, NULL);
@@ -204,9 +189,6 @@ void Parser::generate_tokens() {
 
       else if (tmp == "continue")
         token->_next_token = create_token(_CONTINUE, null_data, NULL);
-
-      else if (tmp == "global")
-        token->_next_token = create_token(_GLOBAL, null_data, NULL);
 
       else {
         d_._string = new char[tmp.length() + 1];
@@ -221,6 +203,14 @@ void Parser::generate_tokens() {
       if ((curr_idx + 1) < length && this->raw_code[curr_idx + 1] == '=') {
         curr_idx += 1;
         token->_next_token = create_token(_OP_EQUAL, null_data, NULL);
+      } else if ((curr_idx + 1) < length &&
+                 this->raw_code[curr_idx + 1] == '<') {
+        curr_idx += 1;
+        token->_next_token = create_token(_OP_LTE, null_data, NULL);
+      } else if ((curr_idx + 1) < length &&
+                 this->raw_code[curr_idx + 1] == '>') {
+        curr_idx += 1;
+        token->_next_token = create_token(_OP_GTE, null_data, NULL);
       } else
         token->_next_token = create_token(_ASSIGN, null_data, NULL);
 
@@ -232,6 +222,10 @@ void Parser::generate_tokens() {
       if ((curr_idx + 1) < length && this->raw_code[curr_idx + 1] == '<') {
         curr_idx += 1;
         token->_next_token = create_token(_OP_SHIFT_LEFT, null_data, NULL);
+      } else if ((curr_idx + 1) < length &&
+                 this->raw_code[curr_idx + 1] == '=') {
+        curr_idx += 1;
+        token->_next_token = create_token(_OP_LTE, null_data, NULL);
       } else
         token->_next_token = create_token(_OP_LT, null_data, NULL);
 
@@ -243,6 +237,10 @@ void Parser::generate_tokens() {
       if ((curr_idx + 1) < length && this->raw_code[curr_idx + 1] == '>') {
         curr_idx += 1;
         token->_next_token = create_token(_OP_SHIFT_RIGHT, null_data, NULL);
+      } else if ((curr_idx + 1) < length &&
+                 this->raw_code[curr_idx + 1] == '=') {
+        curr_idx += 1;
+        token->_next_token = create_token(_OP_GTE, null_data, NULL);
       } else
         token->_next_token = create_token(_OP_GT, null_data, NULL);
 
@@ -262,6 +260,8 @@ void Parser::generate_tokens() {
     }
 
     else if (curr_chr == '\n') {
+      token->_next_token = create_token(_ENDL, null_data, NULL);
+      token = token->_next_token;
       curr_idx += 1;
       flag_newline = 1;
     }
@@ -278,18 +278,38 @@ void Parser::generate_tokens() {
       curr_idx += 1;
   }
 
-  this->token = this->token->_next_token;
+  token->_next_token = create_token(_ENDL, null_data, NULL);
+  token = token->_next_token;
+  token->_next_token = create_token(_END, null_data, NULL);
 }
+
+void Parser::consume_token(int _token) {
+  if (this->curr_token->_type != _token)
+    assert_error(ERR_WRONG_TOKEN);
+  this->curr_token = this->curr_token->_next_token;
+}
+
+int Parser::peek_token(int i) {
+  TOKEN *dummy_;
+  dummy_ = this->curr_token;
+  while (i-- > 0 && dummy_ != NULL)
+    dummy_ = dummy_->_next_token;
+  return dummy_ == NULL ? -1 : dummy_->_type;
+}
+
+int Parser::is_token(int _token) { return this->curr_token->_type == _token; }
 
 AST *Parser::generate_ast() {
   if (this->token == NULL)
     assert_error(ERR_NO_TOKENS);
 
   this->curr_token = this->token;
+
   AST *ast = new AST(AST_MODULE, NULL);
 
-  while (this->curr_token != NULL)
-    ast->add_child(this->parser_stmt());
+  this->consume_token(_START);
+  ast->add_child(this->parse_stmts());
+  this->consume_token(_END);
 
   this->curr_token = this->token;
 
@@ -302,102 +322,600 @@ AST *Parser::parse() {
 }
 
 AST *Parser::parse_stmt() {
+  // TODO
   AST *ast = new AST(AST_STMT, NULL);
 
-  if (this->curr_token->_type == _DEF)
+  if (this->is_token(_DEF))
     ast->add_child(this->parse_functiondef());
 
-  else if (this->curr_token->_type == _CLASS)
+  else if (this->is_token(_CLASS))
     ast->add_child(this->parse_classdef());
 
-  else if (this->curr_token->_type == _RETURN)
+  else if (this->is_token(_RETURN))
     ast->add_child(this->parse_return());
 
-  else if (this->curr_token->_type == _FOR)
+  else if (this->is_token(_FOR))
     ast->add_child(this->parse_for());
 
-  else if (this->curr_token->_type == _WHILE)
+  else if (this->is_token(_WHILE))
     ast->add_child(this->parse_while());
 
-  else if (this->curr_token->_type == _IF)
+  else if (this->is_token(_IF))
     ast->add_child(this->parse_if());
 
-  else if (this->curr_token->_type == _WITH)
-    ast->add_child(this->parse_with());
-
-  else if (this->curr_token->_type == _RAISE)
-    ast->add_child(this->parse_raise());
-
-  else if (this->curr_token->_type == _TRY)
-    ast->add_child(this->parse_try());
-
-  else if (this->curr_token->_type == _ASSERT)
-    ast->add_child(this->parse_assert());
-
-  else if (this->curr_token->_type == _IMPORT)
+  else if (this->is_token(_IMPORT))
     ast->add_child(this->parse_import());
 
-  else if (this->curr_token->_type == _GLOBAL)
-    ast->add_child(this->parse_global());
+  else if (this->is_token(_FROM))
+    ast->add_child(this->parse_importfrom());
 
-  else if (this->curr_token->_type == _PASS)
+  else if (this->is_token(_PASS))
     ast->add_child(this->parse_pass());
 
-  else if (this->curr_token->_type == _BREAK)
+  else if (this->is_token(_BREAK))
     ast->add_child(this->parse_break());
 
-  else if (this->curr_token->_type == _CONTINUE)
+  else if (this->is_token(_CONTINUE))
     ast->add_child(this->parse_continue());
 
-  else if (is_expression(this->curr_token->_type))
+  else
     ast->add_child(this->parse_expr());
 
   return ast;
 }
 
-AST *Parser::parse_expr() {
-  AST *ast = new AST(AST_EXPR, NULL);
+AST *Parser::parse_stmts() {
+  // TODO
+  AST *ast = new AST(AST_STMTS, NULL);
 
-  if (this->curr_token->_type == _LAMBDA)
-    ast->add_child(this->parse_lambda());
+  while (!this->is_token(_END)) {
+    ast->add_child(this->parse_stmt());
+    while (this->is_token(_ENDL))
+      this->curr_token = this->curr_token->_next_token;
+  }
 
   return ast;
 }
 
-AST *Parser::parse_functiondef() { return NULL; }
-AST *Parser::parse_classdef() { return NULL; }
-AST *Parser::parse_return() { return NULL; }
-AST *Parser::parse_assign() { return NULL; }
-AST *Parser::parse_augassign() { return NULL; }
-AST *Parser::parse_for() { return NULL; }
-AST *Parser::parse_while() { return NULL; }
-AST *Parser::parse_if() { return NULL; }
-AST *Parser::parse_with() { return NULL; }
-AST *Parser::parse_raise() { return NULL; }
-AST *Parser::parse_try() { return NULL; }
-AST *Parser::parse_assert() { return NULL; }
-AST *Parser::parse_import() { return NULL; }
-AST *Parser::parse_importfrom() { return NULL; }
-AST *Parser::parse_global() { return NULL; }
-AST *Parser::parse_pass() { return NULL; }
-AST *Parser::parse_break() { return NULL; }
-AST *Parser::parse_continue() { return NULL; }
-AST *Parser::parse_boolop() { return NULL; }
-AST *Parser::parse_namedexpr() { return NULL; }
-AST *Parser::parse_binop() { return NULL; }
-AST *Parser::parse_unaryop() { return NULL; }
-AST *Parser::parse_lambda() { return NULL; }
-AST *Parser::parse_ifexpr() { return NULL; }
-AST *Parser::parse_dict() { return NULL; }
-AST *Parser::parse_set() { return NULL; }
-AST *Parser::parse_listcomp() { return NULL; }
-AST *Parser::parse_setcomp() { return NULL; }
-AST *Parser::parse_dictcomp() { return NULL; }
-AST *Parser::parse_generatorexpr() { return NULL; }
-AST *Parser::parse_compare() { return NULL; }
-AST *Parser::parse_call() { return NULL; }
-AST *Parser::parse_joinedstr() { return NULL; }
-AST *Parser::parse_constant() { return NULL; }
+AST *Parser::parse_expr() {
+  // TODO
+  AST *ast = new AST(AST_EXPR, NULL);
+  TOKEN *tmp_;
+  int _op = this->peek_token(1);
+
+  if (this->is_token(_VAR)) {
+
+  } else if (this->is_token(_DATA_INTEGER) | this->is_token(_DATA_REAL) |
+             this->is_token(_DATA_STRING)) {
+    ast->add_child(this->parse_constant());
+  } else if (this->is_token(_OPEN_SQUARE_BRACKET)) {
+    ast->add_child(this->parse_list());
+  } else if (this->is_token(_OPEN_CURLY_BRACKET)) {
+    ast->add_child(this->parse_dict());
+  } else if (this->is_token(_LAMBDA)) {
+    ast->add_child(this->parse_lambda());
+  } else if (this->is_token(_VAR) & _op == _OPEN_ROUND_BRACKET) {
+    ast->add_child(this->parse_call());
+  } else if (this->is_token(_VAR) & _op == _OPEN_SQUARE_BRACKET) {
+    ast->add_child(this->parse_subscript());
+  }
+  return ast;
+}
+
+AST *Parser::parse_identifier() {
+  AST *ast = new AST(AST_IDENTIFIER, this->curr_token);
+  this->consume_token(_VAR);
+  return ast;
+}
+
+AST *Parser::parse_constant() {
+  if (!(this->is_token(_DATA_INTEGER) | this->is_token(_DATA_REAL) |
+        this->is_token(_DATA_STRING)))
+    assert_error(ERR_EXPECT_CONSTANT);
+
+  AST *ast = new AST(AST_CONSTANT, this->curr_token);
+  this->curr_token = this->curr_token->_next_token;
+  return ast;
+}
+
+AST *Parser::parse_assign() {
+  AST *ast = new AST(AST_ASSIGN, NULL);
+  ast->add_child(this->parse_expr());
+
+  // Consume =
+  this->consume_token(_ASSIGN);
+
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_classdef() {
+  AST *ast = new AST(AST_CLASSDEF, NULL);
+  ast->add_child(this->parse_identifier());
+
+  // Consume :
+  this->consume_token(_COLON);
+  // Consume \n
+  this->consume_token(_ENDL);
+  // Consume start of class
+  this->consume_token(_START);
+
+  return ast;
+}
+
+AST *Parser::parse_functiondef() {
+  AST *ast = new AST(AST_FUNCTIONDEF, NULL);
+
+  ast->add_child(this->parse_identifier());
+
+  // Consume (
+  this->consume_token(_OPEN_ROUND_BRACKET);
+
+  ast->add_child(this->parse_arguments());
+
+  // Consume )
+  this->consume_token(_CLOSE_ROUND_BRACKET);
+  // Consume :
+  this->consume_token(_COLON);
+  // Consume start
+  this->consume_token(_START);
+
+  ast->add_child(this->parse_stmts());
+
+  this->consume_token(_END);
+
+  return ast;
+}
+
+AST *Parser::parse_arguments() {
+  AST *ast = new AST(AST_ARGUMENTS, NULL);
+
+  while (!this->is_token(_CLOSE_ROUND_BRACKET)) {
+    ast->add_child(this->parse_identifier());
+    if (this->is_token(_COMMA))
+      this->consume_token(_COMMA);
+  }
+
+  return ast;
+}
+
+AST *Parser::parse_return() {
+  AST *ast = new AST(AST_RETURN, NULL);
+  // consume return
+  this->consume_token(_RETURN);
+  ast->add_child(this->parse_expr());
+
+  return ast;
+}
+
+AST *Parser::parse_if() {
+  AST *ast = new AST(AST_IF, NULL);
+  // consume if
+  this->consume_token(_IF);
+  ast->add_child(this->parse_expr());
+  // consume : and start
+  this->consume_token(_COLON);
+  this->consume_token(_START);
+  // consume statements
+  ast->add_child(this->parse_stmts());
+  // consume end of if
+  this->consume_token(_END);
+
+  if (this->is_token(_ELIF)) {
+    this->consume_token(_ELIF);
+    TOKEN *token_if = create_token(_IF, null_data, this->curr_token);
+    TOKEN *token_else = create_token(_ELSE, null_data, token_if);
+    this->curr_token = token_else;
+    ast->add_child(this->parse_else());
+  }
+
+  else if (this->is_token(_ELSE))
+    ast->add_child(this->parse_else());
+
+  return ast;
+}
+
+AST *Parser::parse_else() {
+  AST *ast = new AST(AST_ELSE, NULL);
+  // consume else and :
+  this->consume_token(_ELSE);
+  this->consume_token(_COLON);
+  // consume start, parse statements and cosume end
+  this->consume_token(_START);
+  ast->add_child(this->parse_stmts());
+  this->consume_token(_END);
+  return ast;
+}
+
+AST *Parser::parse_initerator() {
+  AST *ast = new AST(AST_INITERATOR, NULL);
+  ast->add_child(this->parse_identifier());
+  this->consume_token(_IN);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_for() {
+  AST *ast = new AST(AST_FOR, NULL);
+  this->consume_token(_FOR);
+  ast->add_child(this->parse_initerator());
+  this->consume_token(_COLON);
+  this->consume_token(_START);
+  ast->add_child(this->parse_stmts());
+  this->consume_token(_END);
+  return ast;
+}
+
+AST *Parser::parse_while() {
+  AST *ast = new AST(AST_WHILE, NULL);
+  this->consume_token(_WHILE);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_COLON);
+  this->consume_token(_START);
+  ast->add_child(this->parse_stmts());
+  this->consume_token(_END);
+  return ast;
+}
+
+AST *Parser::parse_import() {
+  AST *ast = new AST(AST_IMPORT, NULL);
+  this->consume_token(_IMPORT);
+  ast->add_child(this->parse_identifier());
+  return ast;
+}
+
+AST *Parser::parse_importfrom() {
+  AST *ast = new AST(AST_IMPORTFROM, NULL);
+  this->consume_token(_FROM);
+  ast->add_child(this->parse_identifier());
+  this->consume_token(_IMPORT);
+  ast->add_child(this->parse_identifier());
+  return ast;
+}
+
+AST *Parser::parse_pass() {
+  AST *ast = new AST(AST_PASS, NULL);
+  this->consume_token(_PASS);
+  return ast;
+}
+
+AST *Parser::parse_break() {
+  AST *ast = new AST(AST_BREAK, NULL);
+  this->consume_token(_BREAK);
+  return ast;
+}
+
+AST *Parser::parse_continue() {
+  AST *ast = new AST(AST_CONTINUE, NULL);
+  this->consume_token(_CONTINUE);
+  return ast;
+}
+
+AST *Parser::parse_list() {
+  AST *ast = new AST(AST_LIST, NULL);
+  this->consume_token(_OPEN_SQUARE_BRACKET);
+  while (!this->is_token(_CLOSE_SQUARE_BRACKET)) {
+    ast->add_child(this->parse_expr());
+    if (this->is_token(_COMMA))
+      this->consume_token(_COMMA);
+  }
+  this->consume_token(_CLOSE_SQUARE_BRACKET);
+  return ast;
+}
+
+AST *Parser::parse_dict() {
+  AST *ast = new AST(AST_DICT, NULL);
+  AST *ast_keys = new AST(AST_EXPRS, NULL);
+  AST *ast_values = new AST(AST_EXPRS, NULL);
+
+  this->consume_token(_OPEN_CURLY_BRACKET);
+  while (!this->is_token(_CLOSE_CURLY_BRACKET)) {
+    ast_keys->add_child(this->parse_expr());
+    this->consume_token(_COLON);
+    ast_values->add_child(this->parse_expr());
+    if (this->is_token(_COMMA))
+      this->consume_token(_COMMA);
+  }
+  this->consume_token(_CLOSE_CURLY_BRACKET);
+  ast->add_child(ast_keys);
+  ast->add_child(ast_values);
+
+  return ast;
+}
+
+AST *Parser::parse_call() {
+  AST *ast = new AST(AST_CALL, NULL);
+  AST *ast_args = new AST(AST_EXPRS, NULL);
+  ast->add_child(this->parse_identifier());
+  this->consume_token(_OPEN_ROUND_BRACKET);
+  while (!this->is_token(_CLOSE_ROUND_BRACKET)) {
+    ast_args->add_child(this->parse_expr());
+    if (this->is_token(_COMMA))
+      this->consume_token(_COMMA);
+  }
+  this->consume_token(_CLOSE_ROUND_BRACKET);
+  ast->add_child(ast_args);
+  return ast;
+}
+
+AST *Parser::parse_subscript() {
+  AST *ast = new AST(AST_SUBSCRIPT, NULL);
+  ast->add_child(this->parse_identifier());
+  this->consume_token(_OPEN_SQUARE_BRACKET);
+  ast->add_child(this->parse_slice());
+  this->consume_token(_CLOSE_SQUARE_BRACKET);
+  return ast;
+}
+
+AST *Parser::parse_slice() {
+  AST *ast = new AST(AST_SLICE, NULL);
+  AST *low = NULL;
+  AST *high = NULL;
+  AST *step = NULL;
+
+  low = this->parse_expr();
+  if (this->is_token(_COLON)) {
+    this->consume_token(_COLON);
+    high = this->parse_expr();
+  }
+
+  if (this->is_token(_COLON)) {
+    this->consume_token(_COLON);
+    step = this->parse_expr();
+  }
+
+  ast->add_child(low);
+  ast->add_child(high);
+  ast->add_child(step);
+
+  return ast;
+}
+
+AST *Parser::parse_boolop() {
+  AST *ast = new AST(AST_BOOLOP, NULL);
+  int _op = this->peek_token(1);
+  if (_op == _AND)
+    ast->add_child(this->parse_and());
+  else if (_op == _OR)
+    ast->add_child(this->parse_or());
+  else
+    assert_error(ERR_WRONG_TOKEN);
+  return ast;
+}
+
+AST *Parser::parse_binop() {
+  AST *ast = new AST(AST_BINOP, NULL);
+  int _op = this->peek_token(1);
+
+  if (_op == _OP_ADD)
+    ast->add_child(this->parse_add());
+  else if (_op == _OP_DIF)
+    ast->add_child(this->parse_sub());
+  else if (_op == _OP_MUL)
+    ast->add_child(this->parse_mult());
+  else if (_op == _OP_DIV)
+    ast->add_child(this->parse_div());
+  else if (_op == _OP_MOD)
+    ast->add_child(this->parse_mod());
+  else if (_op == _OP_POW)
+    ast->add_child(this->parse_pow());
+  else if (_op == _OP_SHIFT_LEFT)
+    ast->add_child(this->parse_lshift());
+  else if (_op == _OP_SHIFT_RIGHT)
+    ast->add_child(this->parse_rshift());
+  else if (_op == _OP_OR)
+    ast->add_child(this->parse_bitor());
+  else if (_op == _OP_AND)
+    ast->add_child(this->parse_bitand());
+  else if (_op == _OP_XOR)
+    ast->add_child(this->parse_bitxor());
+
+  return ast;
+}
+
+AST *Parser::parse_unaryop() {
+  AST *ast = new AST(AST_UNARYOP, NULL);
+  ast->add_child(this->parse_not());
+  return ast;
+}
+
+AST *Parser::parse_cmpop() {
+  AST *ast = new AST(AST_CMPOP, NULL);
+  int _op = this->peek_token(1);
+
+  if (_op == _OP_EQUAL)
+    ast->add_child(this->parse_eq());
+  else if (_op == _OP_LT)
+    ast->add_child(this->parse_lt());
+  else if (_op == _OP_LTE)
+    ast->add_child(this->parse_lte());
+  else if (_op == _OP_GT)
+    ast->add_child(this->parse_gt());
+  else if (_op == _OP_GTE)
+    ast->add_child(this->parse_gte());
+  else if (_op == _IN)
+    ast->add_child(this->parse_in());
+  else
+    assert_error(ERR_WRONG_TOKEN);
+
+  return ast;
+}
+
+AST *Parser::parse_ifexpr() {
+  AST *ast = new AST(AST_IFEXPR, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_IF);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_ELSE);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_lambda() {
+  AST *ast = new AST(AST_LAMBDA, NULL);
+  this->consume_token(_LAMBDA);
+  ast->add_child(this->parse_arguments());
+  this->consume_token(_COLON);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_and() {
+  AST *ast = new AST(AST_AND, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_AND);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_or() {
+  AST *ast = new AST(AST_OR, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OR);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_add() {
+  AST *ast = new AST(AST_ADD, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_ADD);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_sub() {
+  AST *ast = new AST(AST_SUB, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_DIF);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_mult() {
+  AST *ast = new AST(AST_MULT, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_MUL);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_div() {
+  AST *ast = new AST(AST_DIV, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_DIV);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_mod() {
+  AST *ast = new AST(AST_MOD, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_MOD);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_pow() {
+  AST *ast = new AST(AST_POW, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_POW);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_lshift() {
+  AST *ast = new AST(AST_LSHIFT, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_SHIFT_LEFT);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_rshift() {
+  AST *ast = new AST(AST_RSHIFT, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_SHIFT_RIGHT);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_bitor() {
+  AST *ast = new AST(AST_BITOR, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_OR);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_bitand() {
+  AST *ast = new AST(AST_BITAND, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_AND);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+AST *Parser::parse_bitxor() {
+  AST *ast = new AST(AST_BITXOR, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_OR);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_not() {
+  AST *ast = new AST(AST_NOT, NULL);
+  this->consume_token(_NOT);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_eq() {
+  AST *ast = new AST(AST_EQ, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_EQUAL);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_lt() {
+  AST *ast = new AST(AST_LT, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_LT);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_lte() {
+  AST *ast = new AST(AST_LTE, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_LTE);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_gt() {
+  AST *ast = new AST(AST_GT, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_GT);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+
+AST *Parser::parse_gte() {
+  AST *ast = new AST(AST_GTE, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_OP_GTE);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
+AST *Parser::parse_in() {
+  AST *ast = new AST(AST_IN, NULL);
+  ast->add_child(this->parse_expr());
+  this->consume_token(_IN);
+  ast->add_child(this->parse_expr());
+  return ast;
+}
 
 Parser *Parser::from_code_path(string code_path) {
   ifstream ifs;

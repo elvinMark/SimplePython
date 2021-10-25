@@ -5,6 +5,12 @@ void assert_error(int code_err) {
     cout << "ERROR: Indentation error" << endl;
   else if (code_err == ERR_NO_TOKENS)
     cout << "ERROR: No tokens availables for the generation of the ast" << endl;
+  else if (code_err == ERR_EXPECT_IDENTIFIER)
+    cout << "ERROR: An IDENTIFIER was expected" << endl;
+  else if (code_err == ERR_EXPECT_CONSTANT)
+    cout << "ERROR: A CONSTANT was expected" << endl;
+  else if (code_err == ERR_WRONG_TOKEN)
+    cout << "ERROR: Wrong token encountered" << endl;
   else
     cout << "ERROR: Unknown" << endl;
 

@@ -5,6 +5,7 @@
 
 enum TOKEN_TYPE {
   _EMPTY,
+  _ENDL,
   _NONE,
   _DATA_INTEGER,
   _DATA_REAL,
@@ -20,16 +21,10 @@ enum TOKEN_TYPE {
   _RETURN,
   _LAMBDA,
   _IMPORT,
-  _WITH,
-  _AS,
-  _TRY,
-  _EXCEPT,
-  _RAISE,
-  _ASSERT,
+  _FROM,
   _PASS,
   _BREAK,
   _CONTINUE,
-  _GLOBAL,
   _AND,
   _OR,
   _NOT,
@@ -45,8 +40,6 @@ enum TOKEN_TYPE {
   _COLON,
   _COMMA,
   _DOT,
-  _QUOTE,
-  _DOUBLE_QUOTE,
   _START,
   _END,
   _ASSIGN,
@@ -57,6 +50,8 @@ enum TOKEN_TYPE {
   _OP_POW,
   _OP_GT,
   _OP_LT,
+  _OP_LTE,
+  _OP_GTE,
   _OP_EQUAL,
   _OP_AND,
   _OP_OR,
@@ -74,7 +69,7 @@ union DATA {
 };
 
 extern DATA null_data;
-extern char token_type_map[61][30];
+extern char token_type_map[56][30];
 
 typedef struct TOKEN {
   int _type;

@@ -1,58 +1,20 @@
 #include <spy/generator/ast.hpp>
 
-string ast_type_map[53] = {"AST_MODULE",
-                           "AST_STMT",
-                           "AST_STMTS",
-                           "AST_EXPR",
-                           "AST_EXPRS",
-                           "AST_IDENTIFIER",
-                           "AST_CONSTANT",
-                           "AST_ASSIGN",
-                           "AST_CLASSDEF",
-                           "AST_FUNCTIONDEF",
-                           "AST_ARGUMENTS",
-                           "AST_RETURN",
-                           "AST_IF",
-                           "AST_ELSE",
-                           "AST_INITERATOR",
-                           "AST_FOR",
-                           "AST_WHILE",
-                           "AST_IMPORT",
-                           "AST_IMPORTFROM",
-                           "AST_PASS",
-                           "AST_BREAK",
-                           "AST_CONTINUE",
-                           "AST_LIST",
-                           "AST_DICT",
-                           "AST_CALL",
-                           "AST_SUBSCRIPT",
-                           "AST_SLICE",
-                           "AST_BOOLOP",
-                           "AST_BINOP",
-                           "AST_UNARYOP",
-                           "AST_CMPOP",
-                           "AST_IFEXPR",
-                           "AST_LAMBDA",
-                           "AST_AND",
-                           "AST_OR",
-                           "AST_ADD"
-                           "AST_SUB",
-                           "AST_MULT",
-                           "AST_DIV",
-                           "AST_MOD",
-                           "AST_POW",
-                           "AST_LSHIFT",
-                           "AST_RSHIFT",
-                           "AST_BITOR",
-                           "AST_BITAND",
-                           "AST_BITXOR",
-                           "AST_NOT",
-                           "AST_EQ",
-                           "AST_LT",
-                           "AST_LTE",
-                           "AST_GT",
-                           "AST_GTE",
-                           "AST_IN"};
+string ast_type_map[53] = {
+    "AST_MODULE",   "AST_STMT",        "AST_STMTS",      "AST_EXPR",
+    "AST_EXPRS",    "AST_IDENTIFIER",  "AST_CONSTANT",   "AST_ASSIGN",
+    "AST_CLASSDEF", "AST_FUNCTIONDEF", "AST_ARGUMENTS",  "AST_RETURN",
+    "AST_IF",       "AST_ELSE",        "AST_INITERATOR", "AST_FOR",
+    "AST_WHILE",    "AST_IMPORT",      "AST_IMPORTFROM", "AST_PASS",
+    "AST_BREAK",    "AST_CONTINUE",    "AST_LIST",       "AST_DICT",
+    "AST_CALL",     "AST_SUBSCRIPT",   "AST_SLICE",      "AST_BOOLOP",
+    "AST_BINOP",    "AST_UNARYOP",     "AST_CMPOP",      "AST_IFEXPR",
+    "AST_LAMBDA",   "AST_AND",         "AST_OR",         "AST_ADD",
+    "AST_SUB",      "AST_MULT",        "AST_DIV",        "AST_MOD",
+    "AST_POW",      "AST_LSHIFT",      "AST_RSHIFT",     "AST_BITOR",
+    "AST_BITAND",   "AST_BITXOR",      "AST_NOT",        "AST_EQ",
+    "AST_LT",       "AST_LTE",         "AST_GT",         "AST_GTE",
+    "AST_IN"};
 
 AST *create_ast(int _type, TOKEN *_token, AST *_next, AST *_prev,
                 AST *_first_child, AST *_last_child) {
@@ -127,12 +89,56 @@ int is_end_of_expr(TOKEN *token) {
          token->_type == _COMMA || token->_type == _CLOSE_CURLY_BRACKET ||
          token->_type == _CLOSE_ROUND_BRACKET ||
          token->_type == _CLOSE_SQUARE_BRACKET || token->_type == _ASSIGN ||
-         token->_type == _END;
+         token->_type == _END || token->_type == _ELSE;
 }
 
 int is_constant(TOKEN *token) {
   return token->_type == _DATA_INTEGER || token->_type == _DATA_REAL ||
          token->_type == _DATA_STRING;
+}
+
+int is_next_token(TOKEN *token, int _type) {
+  if (token == NULL)
+    return 0;
+  return is_token(token->_next, _type);
+}
+
+int is_next_token_boolop(TOKEN *token) {
+  if (token == NULL || token->_next == NULL)
+    return 0;
+  return token->_next->_type == _AND || token->_next->_type == _OR;
+}
+
+int is_next_token_binop(TOKEN *token) {
+  if (token == NULL || token->_next == NULL)
+    return 0;
+  return token->_next->_type == _OP_ADD || token->_next->_type == _OP_DIF ||
+         token->_next->_type == _OP_MUL || token->_next->_type == _OP_DIV ||
+         token->_next->_type == _OP_POW || token->_next->_type == _OP_MOD ||
+         token->_next->_type == _OP_SHIFT_LEFT ||
+         token->_next->_type == _OP_SHIFT_RIGHT ||
+         token->_next->_type == _OP_OR || token->_next->_type == _OP_AND ||
+         token->_next->_type == _OP_XOR;
+}
+
+int is_next_token_cmpop(TOKEN *token) {
+  if (token == NULL || token->_next == NULL)
+    return 0;
+  return token->_next->_type == _OP_EQUAL || token->_next->_type == _OP_LT ||
+         token->_next->_type == _OP_LTE || token->_next->_type == _OP_GT ||
+         token->_next->_type == _OP_GTE || token->_next->_type == _IN;
+}
+
+int is_ast(AST *_ast, int _type) {
+  if (_ast == NULL)
+    return 0;
+  return _ast->_type == _type;
+}
+
+int is_prev_ast(AST *_ast, int _type) {
+  if (_ast == NULL || _ast->_prev == NULL)
+    return 0;
+  return _ast->_prev->_type == _type;
 }
 
 void consume_token(TOKEN **_token, int _type) {
@@ -188,7 +194,6 @@ AST *parse_stmt(TOKEN **tokens) {
   } else if (is_token(*tokens, _CONTINUE)) {
     push_child(_ast, parse_continue(tokens));
   } else if (is_token(*tokens, _ENDL)) {
-    // FIXME
     consume_token(tokens, _ENDL);
   } else {
     push_child(_ast, parse_expr(tokens));
@@ -199,7 +204,6 @@ AST *parse_stmt(TOKEN **tokens) {
       push_child(_tmp, parse_expr(tokens));
       push_child(_ast, _tmp);
     }
-    cout << "sdfsaf" << endl;
   }
   return _ast;
 }
@@ -208,16 +212,60 @@ AST *parse_expr(TOKEN **tokens) {
   AST *_ast = create_ast(AST_EXPR, NULL);
   while (!is_end_of_expr(*tokens)) {
     if (is_token(*tokens, _VAR)) {
-      // TODO: Peek for call or subscript
       push_child(_ast, parse_identifier(tokens));
     } else if (is_constant(*tokens)) {
       push_child(_ast, parse_constant(tokens));
     } else if (is_token(*tokens, _OPEN_SQUARE_BRACKET)) {
-      push_child(_ast, parse_list(tokens));
+      if (is_ast(_ast->_last_child, AST_IDENTIFIER)) {
+        // Subscript
+        AST *_id = pop_child(_ast);
+        AST *_arr = create_ast(AST_SUBSCRIPT, NULL);
+        push_child(_arr, _id);
+        consume_token(tokens, _OPEN_SQUARE_BRACKET);
+        push_child(_arr, parse_slice(tokens));
+        consume_token(tokens, _CLOSE_SQUARE_BRACKET);
+        push_child(_ast, _arr);
+      } else
+        push_child(_ast, parse_list(tokens));
     } else if (is_token(*tokens, _OPEN_CURLY_BRACKET)) {
       push_child(_ast, parse_dict(tokens));
+    } else if (is_token(*tokens, _OPEN_ROUND_BRACKET)) {
+      if (is_ast(_ast->_last_child, AST_IDENTIFIER)) {
+        // Call
+        AST *_call = create_ast(AST_CALL, NULL);
+        AST *_exprs = create_ast(AST_EXPRS, NULL);
+        push_child(_call, pop_child(_ast));
+        consume_token(tokens, _OPEN_ROUND_BRACKET);
+        while (!is_token(*tokens, _CLOSE_ROUND_BRACKET)) {
+          push_child(_exprs, parse_expr(tokens));
+          if (!is_token(*tokens, _CLOSE_ROUND_BRACKET))
+            consume_token(tokens, _COMMA);
+        }
+        consume_token(tokens, _CLOSE_ROUND_BRACKET);
+        push_child(_call, _exprs);
+        push_child(_ast, _call);
+      }
     } else if (is_token(*tokens, _LAMBDA)) {
       push_child(_ast, parse_lambda(tokens));
+    } else if (is_token(*tokens, _NOT)) {
+      AST *_tmp = create_ast(AST_NOT, NULL);
+      consume_token(tokens, _NOT);
+      push_child(_tmp, parse_expr(tokens));
+      push_child(_ast, _tmp);
+    } else if (is_token(*tokens, _IF)) {
+      // IFEXPR
+      if (is_ast(_ast->_last_child, AST_EXPR) ||
+          is_ast(_ast->_last_child, AST_IDENTIFIER) ||
+          is_ast(_ast->_last_child, AST_CONSTANT)) {
+        AST *_ifexpr = create_ast(AST_IFEXPR, NULL);
+        push_child(_ifexpr, pop_child(_ast));
+        consume_token(tokens, _IF);
+        push_child(_ifexpr, parse_expr(tokens));
+        consume_token(tokens, _ELSE);
+        push_child(_ifexpr, parse_expr(tokens));
+        push_child(_ast, _ifexpr);
+      } else
+        exit(-1);
     }
   }
   if (is_token(*tokens, _ENDL))

@@ -1,0 +1,4 @@
+arr[1:x:3] = test[2]
+print("hello world!",2,arr[x])
+
+x = True if x else z

@@ -85,6 +85,12 @@ int is_token(TOKEN *token, int type);
 void consume_token(TOKEN **token, int type);
 int is_end_of_expr(TOKEN *token);
 int is_constant(TOKEN *token);
+int is_next_token(TOKEN *token, int type);
+int is_next_token_boolop(TOKEN *token);
+int is_next_token_binop(TOKEN *token);
+int is_next_token_cmpop(TOKEN *token);
+int is_ast(AST *_ast, int _type);
+int is_prev_ast(AST *_ast, int _type);
 
 AST *parse(TOKEN **tokens);
 AST *parse_stmt(TOKEN **tokens);

@@ -1,7 +1,10 @@
 #ifndef SPY_TOKEN
 #define SPY_TOKEN
 
+#include <cstring>
 #include <iostream>
+#include <spy/utils/error.hpp>
+#include <spy/utils/misc.hpp>
 
 enum TOKEN_TYPE {
   _EMPTY,
@@ -68,20 +71,24 @@ union DATA {
   char *_string;
 };
 
-extern DATA null_data;
-extern char token_type_map[56][30];
+extern string token_map[56];
 
 typedef struct TOKEN {
   int _type;
-  DATA _data;
-  struct TOKEN *_next_token;
+  DATA *_data;
+  struct TOKEN *_next;
 } TOKEN;
 
-TOKEN *create_token();
-TOKEN *create_token(int, DATA, TOKEN *);
+DATA *create_data(int);
+DATA *create_data(double);
+DATA *create_data(string);
+
 int is_number(char c);
 int is_alphabet(char c);
 int is_symbol(char c);
-void create_map_characters(char *map);
+void create_token_dict(char *token_dict);
+TOKEN *create_token(int, DATA *, TOKEN *);
+TOKEN *tokenize(string s);
+void print_tokens(TOKEN *tokens);
 
 #endif

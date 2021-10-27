@@ -62,22 +62,81 @@ enum AST_TYPE {
   AST_IN,
 };
 
-extern char ast_type_map[53][30];
+extern string ast_type_map[53];
 
-int is_expression(int token_type);
+typedef struct AST {
+  int _type;
+  TOKEN *_token;
+  AST *_next;
+  AST *_prev;
+  AST *_first_child;
+  AST *_last_child;
+} AST;
 
-class AST {
-public:
-  int ast_type;
-  TOKEN *ast_token;
-  AST **child_nodes;
-  int child_num;
+AST *create_ast(int _type, TOKEN *_token);
+AST *create_ast(int _type, TOKEN *_token, AST *_next, AST *_prev,
+                AST *_first_child, AST *_last_child);
+void push_ast(AST **_ast, AST *new_ast);
+AST *pop_ast(AST **_ast);
+void push_child(AST *_ast, AST *child);
+AST *pop_child(AST *_ast);
+void print_ast(AST *_ast, int depth);
+int is_token(TOKEN *token, int type);
+void consume_token(TOKEN **token, int type);
+int is_end_of_expr(TOKEN *token);
+int is_constant(TOKEN *token);
 
-public:
-  AST();
-  AST(int ast_type, TOKEN *ast_token);
-  void add_child(AST *child_node);
-  void print(int depth);
-};
+AST *parse(TOKEN **tokens);
+AST *parse_stmt(TOKEN **tokens);
+AST *parse_stmts(TOKEN **tokens);
+AST *parse_expr(TOKEN **tokens);
+AST *parse_identifier(TOKEN **tokens);
+AST *parse_constant(TOKEN **tokens);
+AST *parse_classdef(TOKEN **tokens);
+AST *parse_functiondef(TOKEN **tokens);
+AST *parse_arguments(TOKEN **tokens);
+AST *parse_return(TOKEN **tokens);
+AST *parse_if(TOKEN **tokens);
+AST *parse_else(TOKEN **tokens);
+AST *parse_initerator(TOKEN **tokens);
+AST *parse_for(TOKEN **tokens);
+AST *parse_while(TOKEN **tokens);
+AST *parse_import(TOKEN **tokens);
+AST *parse_importfrom(TOKEN **tokens);
+AST *parse_pass(TOKEN **tokens);
+AST *parse_break(TOKEN **tokens);
+AST *parse_continue(TOKEN **tokens);
+AST *parse_list(TOKEN **tokens);
+AST *parse_dict(TOKEN **tokens);
+AST *parse_call(TOKEN **tokens);
+AST *parse_subscript(TOKEN **tokens);
+AST *parse_slice(TOKEN **tokens);
+AST *parse_lambda(TOKEN **tokens);
+
+// AST *parse_boolop(TOKEN **tokens);
+// AST *parse_binop(TOKEN **tokens);
+// AST *parse_unaryop(TOKEN **tokens);
+// AST *parse_cmpop(TOKEN **tokens);
+// AST *parse_ifexpr(TOKEN **tokens);
+// AST *parse_and(TOKEN **tokens);
+// AST *parse_or(TOKEN **tokens);
+// AST *parse_add(TOKEN **tokens);
+// AST *parse_sub(TOKEN **tokens);
+// AST *parse_mult(TOKEN **tokens);
+// AST *parse_div(TOKEN **tokens);
+// AST *parse_mod(TOKEN **tokens);
+// AST *parse_pow(TOKEN **tokens);
+// AST *parse_lshift(TOKEN **tokens);
+// AST *parse_rshift(TOKEN **tokens);
+// AST *parse_bitor(TOKEN **tokens);
+// AST *parse_bitand(TOKEN **tokens);
+// AST *parse_bitxor(TOKEN **tokens);
+// AST *parse_not(TOKEN **tokens);
+// AST *parse_eq(TOKEN **tokens);
+// AST *parse_lt(TOKEN **tokens);
+// AST *parse_lte(TOKEN **tokens);
+// AST *parse_gt(TOKEN **tokens);
+// AST *parse_gte(TOKEN **tokens);
+// AST *parse_in(TOKEN **tokens);
 
 #endif

@@ -1,6 +1,6 @@
 #include <iostream>
-#include <spy/generator/parser.hpp>
 #include <spy/generator/token.hpp>
+#include <spy/utils/misc.hpp>
 
 using namespace std;
 
@@ -11,20 +11,9 @@ int main(int argc, char **args) {
     exit(-1);
   }
 
-  Parser *parser = Parser::from_code_path(args[1]);
-  TOKEN *token;
-
-  parser->generate_tokens();
-
-  for (token = parser->token; token != NULL; token = token->_next_token) {
-    printf("token type: %s\n", token_type_map[token->_type]);
-    if (token->_type == _DATA_INTEGER)
-      printf("data: %d\n", token->_data._integer);
-    else if (token->_type == _DATA_REAL)
-      printf("data: %lf\n", token->_data._real);
-    else if (token->_type == _DATA_STRING)
-      printf("data: %s\n", token->_data._string);
-  }
-
+  TOKEN *tokens;
+  tokens = tokenize(read_file(args[1]));
+  cout << "Finish Tokenizing" << endl;
+  print_tokens(tokens);
   return 0;
 }

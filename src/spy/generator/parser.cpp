@@ -358,8 +358,14 @@ AST *Parser::parse_stmt() {
   else if (this->is_token(_CONTINUE))
     ast->add_child(this->parse_continue());
 
-  else
+  else if (this->is_token(_OPEN_ROUND_BRACKET))
     ast->add_child(this->parse_expr());
+
+  else {
+    ast->add_child(this->parse_expr());
+    if (this->is_token(_ASSIGN)) {
+    }
+  }
 
   return ast;
 }
@@ -384,8 +390,8 @@ AST *Parser::parse_expr() {
   int _op = this->peek_token(1);
 
   if (this->is_token(_VAR)) {
-
-  } else if (this->is_token(_DATA_INTEGER) | this->is_token(_DATA_REAL) |
+    ast->add_child(this->parse_identifier());
+  } else if (this->is_token(_DATA_INTEGER) || this->is_token(_DATA_REAL) ||
              this->is_token(_DATA_STRING)) {
     ast->add_child(this->parse_constant());
   } else if (this->is_token(_OPEN_SQUARE_BRACKET)) {
@@ -409,7 +415,7 @@ AST *Parser::parse_identifier() {
 }
 
 AST *Parser::parse_constant() {
-  if (!(this->is_token(_DATA_INTEGER) | this->is_token(_DATA_REAL) |
+  if (!(this->is_token(_DATA_INTEGER) || this->is_token(_DATA_REAL) ||
         this->is_token(_DATA_STRING)))
     assert_error(ERR_EXPECT_CONSTANT);
 

@@ -126,9 +126,6 @@ from MODULE import SUBMODULE
 	- ELSE
   - ELSE:
 	- STMTS
-  - INITERATOR:
-	- IDENTIFIER
-	- EXPR
   - FOR:
 	- INITERATOR
 	- STMTS
@@ -143,6 +140,7 @@ from MODULE import SUBMODULE
   - PASS
   - BREAK
   - CONTINUE
+  - EXPR
 	
 - EXPR:
   - IDENTIFIER
@@ -157,6 +155,10 @@ from MODULE import SUBMODULE
   - CMPOP
   - IFEXP
   - LAMBDA
+
+- INITERATOR:
+  - IDENTIFIER
+  - EXPR
 
 - LIST:
   - EXPRS

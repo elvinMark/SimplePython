@@ -17,4 +17,7 @@ string code_from_ast(AST *_ast);
 string code_from_tokens(TOKEN *tokens);
 string code_from_string(string code);
 string code_from_file(string path_to_file);
+
+string generate_header();
+
 #endif

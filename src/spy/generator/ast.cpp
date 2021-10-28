@@ -153,10 +153,15 @@ int is_last_child_expr(AST *_ast) {
 
 void consume_token(TOKEN **_token, int _type) {
   if ((*_token) == NULL) {
+    assert_error(ERR_NO_TOKENS);
     exit(-1);
   }
   if ((*_token)->_type == _type)
     (*_token) = (*_token)->_next;
+  else {
+    assert_error(ERR_WRONG_TOKEN);
+    exit(-1);
+  }
 }
 
 AST *parse(TOKEN **tokens) {
@@ -272,11 +277,14 @@ AST *parse_expr(TOKEN **tokens) {
         consume_token(tokens, _ELSE);
         push_child(_ifexpr, parse_expr(tokens));
         push_child(_ast, _ifexpr);
-      } else
+      } else {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
+      }
     } else if (is_token_binop(*tokens)) {
       // BINOP
       if (!is_last_child_expr(_ast)) {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
       }
       if (is_token(*tokens, _OP_ADD)) {
@@ -339,12 +347,16 @@ AST *parse_expr(TOKEN **tokens) {
         push_child(_ast_bitxor, pop_child(_ast));
         push_child(_ast_bitxor, parse_expr(tokens));
         push_child(_ast, _ast_bitxor);
-      } else
+      } else {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
+      }
     } else if (is_token_boolop(*tokens)) {
       // BOOLOP
-      if (!is_last_child_expr(_ast))
+      if (!is_last_child_expr(_ast)) {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
+      }
       if (is_token(*tokens, _AND)) {
         AST *_ast_and = create_ast(AST_AND, NULL);
         consume_token(tokens, _AND);
@@ -357,12 +369,16 @@ AST *parse_expr(TOKEN **tokens) {
         push_child(_ast_or, pop_child(_ast));
         push_child(_ast_or, parse_expr(tokens));
         push_child(_ast, _ast_or);
-      } else
+      } else {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
+      }
     } else if (is_token_cmpop(*tokens)) {
       // CMPOP
-      if (!is_last_child_expr(_ast))
+      if (!is_last_child_expr(_ast)) {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
+      }
       if (is_token(*tokens, _OP_EQUAL)) {
         AST *_ast_equal = create_ast(AST_EQ, NULL);
         consume_token(tokens, _OP_EQUAL);
@@ -399,8 +415,10 @@ AST *parse_expr(TOKEN **tokens) {
         push_child(_ast_in, pop_child(_ast));
         push_child(_ast_in, parse_expr(tokens));
         push_child(_ast, _ast_in);
-      } else
+      } else {
+        assert_error(ERR_WRONG_TOKEN);
         exit(-1);
+      }
     }
   }
   if (is_token(*tokens, _ENDL))
@@ -426,8 +444,10 @@ AST *parse_constant(TOKEN **tokens) {
     consume_token(tokens, _TRUE);
   else if ((*tokens)->_type == _FALSE)
     consume_token(tokens, _FALSE);
-  else
+  else {
+    assert_error(ERR_WRONG_TOKEN);
     exit(-1);
+  }
   return _ast;
 }
 

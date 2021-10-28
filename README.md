@@ -225,8 +225,8 @@ from MODULE import SUBMODULE
   - IDENTIFIERS
 
 # TODO
-- [ ] Parser:
+- [x] Parser:
   - [x] Generate Tokens: Raw Code -> Sequence of Tokens ([def,test,(,if,x,<,....])
-  - [ ] Generate AST: Sequence of Tokens -> AST (fun_statement, if_statement)
+  - [x] Generate AST: Sequence of Tokens -> AST (fun_statement, if_statement) [~Almost done~]
 - [ ] Code Generator:
   - [ ] Sequence of Tokens -> C++ code

@@ -1,9 +1,9 @@
 #ifndef SPY_OBJECT
 #define SPY_OBJECT
 
-class Object {
+class SpyObject {
 public:
-  Object();
+  SpyObject();
 };
 
 #endif

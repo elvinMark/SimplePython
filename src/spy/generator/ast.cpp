@@ -94,7 +94,8 @@ int is_end_of_expr(TOKEN *token) {
 
 int is_constant(TOKEN *token) {
   return token->_type == _DATA_INTEGER || token->_type == _DATA_REAL ||
-         token->_type == _DATA_STRING;
+         token->_type == _DATA_STRING || token->_type == _TRUE ||
+         token->_type == _FALSE;
 }
 
 int is_next_token(TOKEN *token, int _type) {
@@ -103,30 +104,29 @@ int is_next_token(TOKEN *token, int _type) {
   return is_token(token->_next, _type);
 }
 
-int is_next_token_boolop(TOKEN *token) {
-  if (token == NULL || token->_next == NULL)
+int is_token_boolop(TOKEN *token) {
+  if (token == NULL)
     return 0;
-  return token->_next->_type == _AND || token->_next->_type == _OR;
+  return token->_type == _AND || token->_type == _OR;
 }
 
-int is_next_token_binop(TOKEN *token) {
-  if (token == NULL || token->_next == NULL)
+int is_token_binop(TOKEN *token) {
+  if (token == NULL)
     return 0;
-  return token->_next->_type == _OP_ADD || token->_next->_type == _OP_DIF ||
-         token->_next->_type == _OP_MUL || token->_next->_type == _OP_DIV ||
-         token->_next->_type == _OP_POW || token->_next->_type == _OP_MOD ||
-         token->_next->_type == _OP_SHIFT_LEFT ||
-         token->_next->_type == _OP_SHIFT_RIGHT ||
-         token->_next->_type == _OP_OR || token->_next->_type == _OP_AND ||
-         token->_next->_type == _OP_XOR;
+  return token->_type == _OP_ADD || token->_type == _OP_DIF ||
+         token->_type == _OP_MUL || token->_type == _OP_DIV ||
+         token->_type == _OP_POW || token->_type == _OP_MOD ||
+         token->_type == _OP_SHIFT_LEFT || token->_type == _OP_SHIFT_RIGHT ||
+         token->_type == _OP_OR || token->_type == _OP_AND ||
+         token->_type == _OP_XOR;
 }
 
-int is_next_token_cmpop(TOKEN *token) {
+int is_token_cmpop(TOKEN *token) {
   if (token == NULL || token->_next == NULL)
     return 0;
-  return token->_next->_type == _OP_EQUAL || token->_next->_type == _OP_LT ||
-         token->_next->_type == _OP_LTE || token->_next->_type == _OP_GT ||
-         token->_next->_type == _OP_GTE || token->_next->_type == _IN;
+  return token->_type == _OP_EQUAL || token->_type == _OP_LT ||
+         token->_type == _OP_LTE || token->_type == _OP_GT ||
+         token->_type == _OP_GTE || token->_type == _IN;
 }
 
 int is_ast(AST *_ast, int _type) {
@@ -139,6 +139,16 @@ int is_prev_ast(AST *_ast, int _type) {
   if (_ast == NULL || _ast->_prev == NULL)
     return 0;
   return _ast->_prev->_type == _type;
+}
+
+int is_last_child_expr(AST *_ast) {
+  return is_ast(_ast->_last_child, AST_EXPR) ||
+         is_ast(_ast->_last_child, AST_IDENTIFIER) ||
+         is_ast(_ast->_last_child, AST_CONSTANT) ||
+         is_ast(_ast->_last_child, AST_CALL) ||
+         is_ast(_ast->_last_child, AST_LIST) ||
+         is_ast(_ast->_last_child, AST_DICT) ||
+         is_ast(_ast->_last_child, AST_SUBSCRIPT);
 }
 
 void consume_token(TOKEN **_token, int _type) {
@@ -254,9 +264,7 @@ AST *parse_expr(TOKEN **tokens) {
       push_child(_ast, _tmp);
     } else if (is_token(*tokens, _IF)) {
       // IFEXPR
-      if (is_ast(_ast->_last_child, AST_EXPR) ||
-          is_ast(_ast->_last_child, AST_IDENTIFIER) ||
-          is_ast(_ast->_last_child, AST_CONSTANT)) {
+      if (is_last_child_expr(_ast)) {
         AST *_ifexpr = create_ast(AST_IFEXPR, NULL);
         push_child(_ifexpr, pop_child(_ast));
         consume_token(tokens, _IF);
@@ -264,6 +272,133 @@ AST *parse_expr(TOKEN **tokens) {
         consume_token(tokens, _ELSE);
         push_child(_ifexpr, parse_expr(tokens));
         push_child(_ast, _ifexpr);
+      } else
+        exit(-1);
+    } else if (is_token_binop(*tokens)) {
+      // BINOP
+      if (!is_last_child_expr(_ast)) {
+        exit(-1);
+      }
+      if (is_token(*tokens, _OP_ADD)) {
+        AST *_ast_add = create_ast(AST_ADD, NULL);
+        consume_token(tokens, _OP_ADD);
+        push_child(_ast_add, pop_child(_ast));
+        push_child(_ast_add, parse_expr(tokens));
+        push_child(_ast, _ast_add);
+      } else if (is_token(*tokens, _OP_DIF)) {
+        AST *_ast_diff = create_ast(AST_SUB, NULL);
+        consume_token(tokens, _OP_DIF);
+        push_child(_ast_diff, pop_child(_ast));
+        push_child(_ast_diff, parse_expr(tokens));
+        push_child(_ast, _ast_diff);
+      } else if (is_token(*tokens, _OP_MUL)) {
+        AST *_ast_mult = create_ast(AST_MULT, NULL);
+        consume_token(tokens, _OP_MUL);
+        push_child(_ast_mult, pop_child(_ast));
+        push_child(_ast_mult, parse_expr(tokens));
+        push_child(_ast, _ast_mult);
+      } else if (is_token(*tokens, _OP_DIV)) {
+        AST *_ast_div = create_ast(AST_DIV, NULL);
+        consume_token(tokens, _OP_DIV);
+        push_child(_ast_div, pop_child(_ast));
+        push_child(_ast_div, parse_expr(tokens));
+        push_child(_ast, _ast_div);
+      } else if (is_token(*tokens, _OP_POW)) {
+        AST *_ast_pow = create_ast(AST_POW, NULL);
+        consume_token(tokens, _OP_POW);
+        push_child(_ast_pow, pop_child(_ast));
+        push_child(_ast_pow, parse_expr(tokens));
+        push_child(_ast, _ast_pow);
+      } else if (is_token(*tokens, _OP_SHIFT_LEFT)) {
+        AST *_ast_lshift = create_ast(AST_LSHIFT, NULL);
+        consume_token(tokens, _OP_SHIFT_LEFT);
+        push_child(_ast_lshift, pop_child(_ast));
+        push_child(_ast_lshift, parse_expr(tokens));
+        push_child(_ast, _ast_lshift);
+      } else if (is_token(*tokens, _OP_SHIFT_RIGHT)) {
+        AST *_ast_rshift = create_ast(AST_RSHIFT, NULL);
+        consume_token(tokens, _OP_SHIFT_RIGHT);
+        push_child(_ast_rshift, pop_child(_ast));
+        push_child(_ast_rshift, parse_expr(tokens));
+        push_child(_ast, _ast_rshift);
+      } else if (is_token(*tokens, _OP_AND)) {
+        AST *_ast_bitand = create_ast(AST_BITAND, NULL);
+        consume_token(tokens, _OP_AND);
+        push_child(_ast_bitand, pop_child(_ast));
+        push_child(_ast_bitand, parse_expr(tokens));
+        push_child(_ast, _ast_bitand);
+      } else if (is_token(*tokens, _OP_OR)) {
+        AST *_ast_bitor = create_ast(AST_BITOR, NULL);
+        consume_token(tokens, _OP_OR);
+        push_child(_ast_bitor, pop_child(_ast));
+        push_child(_ast_bitor, parse_expr(tokens));
+        push_child(_ast, _ast_bitor);
+      } else if (is_token(*tokens, _OP_XOR)) {
+        AST *_ast_bitxor = create_ast(AST_BITXOR, NULL);
+        consume_token(tokens, _OP_XOR);
+        push_child(_ast_bitxor, pop_child(_ast));
+        push_child(_ast_bitxor, parse_expr(tokens));
+        push_child(_ast, _ast_bitxor);
+      } else
+        exit(-1);
+    } else if (is_token_boolop(*tokens)) {
+      // BOOLOP
+      if (!is_last_child_expr(_ast))
+        exit(-1);
+      if (is_token(*tokens, _AND)) {
+        AST *_ast_and = create_ast(AST_AND, NULL);
+        consume_token(tokens, _AND);
+        push_child(_ast_and, pop_child(_ast));
+        push_child(_ast_and, parse_expr(tokens));
+        push_child(_ast, _ast_and);
+      } else if (is_token(*tokens, _OR)) {
+        AST *_ast_or = create_ast(AST_OR, NULL);
+        consume_token(tokens, _OR);
+        push_child(_ast_or, pop_child(_ast));
+        push_child(_ast_or, parse_expr(tokens));
+        push_child(_ast, _ast_or);
+      } else
+        exit(-1);
+    } else if (is_token_cmpop(*tokens)) {
+      // CMPOP
+      if (!is_last_child_expr(_ast))
+        exit(-1);
+      if (is_token(*tokens, _OP_EQUAL)) {
+        AST *_ast_equal = create_ast(AST_EQ, NULL);
+        consume_token(tokens, _OP_EQUAL);
+        push_child(_ast_equal, pop_child(_ast));
+        push_child(_ast_equal, parse_expr(tokens));
+        push_child(_ast, _ast_equal);
+      } else if (is_token(*tokens, _OP_LT)) {
+        AST *_ast_lt = create_ast(AST_LT, NULL);
+        consume_token(tokens, _OP_LT);
+        push_child(_ast_lt, pop_child(_ast));
+        push_child(_ast_lt, parse_expr(tokens));
+        push_child(_ast, _ast_lt);
+      } else if (is_token(*tokens, _OP_LTE)) {
+        AST *_ast_lte = create_ast(AST_LTE, NULL);
+        consume_token(tokens, _OP_LTE);
+        push_child(_ast_lte, pop_child(_ast));
+        push_child(_ast_lte, parse_expr(tokens));
+        push_child(_ast, _ast_lte);
+      } else if (is_token(*tokens, _OP_GT)) {
+        AST *_ast_gt = create_ast(AST_GT, NULL);
+        consume_token(tokens, _OP_GT);
+        push_child(_ast_gt, pop_child(_ast));
+        push_child(_ast_gt, parse_expr(tokens));
+        push_child(_ast, _ast_gt);
+      } else if (is_token(*tokens, _OP_GTE)) {
+        AST *_ast_gte = create_ast(AST_GTE, NULL);
+        consume_token(tokens, _OP_GTE);
+        push_child(_ast_gte, pop_child(_ast));
+        push_child(_ast_gte, parse_expr(tokens));
+        push_child(_ast, _ast_gte);
+      } else if (is_token(*tokens, _IN)) {
+        AST *_ast_in = create_ast(AST_IN, NULL);
+        consume_token(tokens, _IN);
+        push_child(_ast_in, pop_child(_ast));
+        push_child(_ast_in, parse_expr(tokens));
+        push_child(_ast, _ast_in);
       } else
         exit(-1);
     }
@@ -287,6 +422,10 @@ AST *parse_constant(TOKEN **tokens) {
     consume_token(tokens, _DATA_REAL);
   else if ((*tokens)->_type == _DATA_STRING)
     consume_token(tokens, _DATA_STRING);
+  else if ((*tokens)->_type == _TRUE)
+    consume_token(tokens, _TRUE);
+  else if ((*tokens)->_type == _FALSE)
+    consume_token(tokens, _FALSE);
   else
     exit(-1);
   return _ast;
@@ -505,29 +644,3 @@ AST *parse_lambda(TOKEN **tokens) {
   push_child(_ast, parse_expr(tokens));
   return _ast;
 }
-
-// AST *parse_boolop(TOKEN **tokens);
-// AST *parse_binop(TOKEN **tokens);
-// AST *parse_unaryop(TOKEN **tokens);
-// AST *parse_cmpop(TOKEN **tokens);
-// AST *parse_ifexpr(TOKEN **tokens);
-// AST *parse_and(TOKEN **tokens);
-// AST *parse_or(TOKEN **tokens);
-// AST *parse_add(TOKEN **tokens);
-// AST *parse_sub(TOKEN **tokens);
-// AST *parse_mult(TOKEN **tokens);
-// AST *parse_div(TOKEN **tokens);
-// AST *parse_mod(TOKEN **tokens);
-// AST *parse_pow(TOKEN **tokens);
-// AST *parse_lshift(TOKEN **tokens);
-// AST *parse_rshift(TOKEN **tokens);
-// AST *parse_bitor(TOKEN **tokens);
-// AST *parse_bitand(TOKEN **tokens);
-// AST *parse_bitxor(TOKEN **tokens);
-// AST *parse_not(TOKEN **tokens);
-// AST *parse_eq(TOKEN **tokens);
-// AST *parse_lt(TOKEN **tokens);
-// AST *parse_lte(TOKEN **tokens);
-// AST *parse_gt(TOKEN **tokens);
-// AST *parse_gte(TOKEN **tokens);
-// AST *parse_in(TOKEN **tokens);

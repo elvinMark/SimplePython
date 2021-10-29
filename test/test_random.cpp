@@ -26,9 +26,10 @@ int main() {
   // cout << test.at(0) << endl;
   // cout << test.at(1) << endl;
 
-  map<string, int> hm = map<string, int>();
-  hm["test"] = 2;
-  hm["foo"] = 3;
-  cout << hm["foo"] << endl;
+  // map<string, int> hm = map<string, int>();
+  // hm["test"] = 2;
+  // hm["foo"] = 3;
+  // cout << hm["foo"] << endl;
+
   return 0;
 }

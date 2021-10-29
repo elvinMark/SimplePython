@@ -18,6 +18,11 @@ test_ast:
 	$(CC) -I$(INCLUDE_DIR) -c test/test_ast.cpp -o third_parties/test_ast.o
 	$(CC) third_parties/*.o -o third_parties/test_ast
 
+test_random:
+	rm third_parties/*;
+	$(CC) -I$(INCLUDE_DIR) -c test/test_random.cpp -o third_parties/test_random.o
+	$(CC) third_parties/*.o -o third_parties/test_random
+
 test_generator:
 	rm third_parties/*
 	$(CC) -I$(INCLUDE_DIR) -c src/spy/generator/token.cpp -o third_parties/token.o

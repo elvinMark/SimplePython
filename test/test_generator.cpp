@@ -18,7 +18,8 @@ int main(int argc, char **args) {
   AST *ast = parse(&tokens);
   cout << "AST: Finished" << endl;
   print_ast(ast, 0);
-  string cpp_code = code_from_ast(ast);
+  Generator *generator = new Generator();
+  string cpp_code = generator->code_from_ast(ast);
   cout << cpp_code << endl;
   return 0;
 }

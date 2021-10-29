@@ -11,6 +11,8 @@ void assert_error(int code_err) {
     cout << "ERROR: A CONSTANT was expected" << endl;
   else if (code_err == ERR_WRONG_TOKEN)
     cout << "ERROR: Wrong token encountered" << endl;
+  else if (code_err == ERR_WRONG_AST)
+    cout << "ERROR: Wrong ast encountered" << endl;
   else
     cout << "ERROR: Unknown" << endl;
 

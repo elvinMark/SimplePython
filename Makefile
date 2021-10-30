@@ -23,6 +23,13 @@ test_random:
 	$(CC) -I$(INCLUDE_DIR) -c test/test_random.cpp -o third_parties/test_random.o
 	$(CC) third_parties/*.o -o third_parties/test_random
 
+test_core:
+	rm third_parties/*;
+	$(CC) -I$(INCLUDE_DIR) -c src/spy/core/object.cpp -o third_parties/object.o
+	$(CC) -I$(INCLUDE_DIR) -c src/spy/utils/error.cpp -o third_parties/error.o
+	$(CC) -I$(INCLUDE_DIR) -c test/test_core.cpp -o third_parties/test_core.o
+	$(CC) third_parties/*.o -o third_parties/test_core
+
 test_generator:
 	rm third_parties/*
 	$(CC) -I$(INCLUDE_DIR) -c src/spy/generator/token.cpp -o third_parties/token.o

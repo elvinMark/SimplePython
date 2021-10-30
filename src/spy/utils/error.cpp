@@ -15,6 +15,8 @@ void assert_error(int code_err) {
     cout << "ERROR: Wrong ast encountered" << endl;
   else if (code_err == ERR_WRONG_CASTING)
     cout << "ERROR: Wrong casting was performed" << endl;
+  else if (code_err == ERR_NOT_IMPLEMENTED)
+    cout << "ERROR: Not implemented" << endl;
   else
     cout << "ERROR: Unknown" << endl;
 

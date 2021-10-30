@@ -15,6 +15,8 @@
 
 using namespace std;
 
+string get_string_from_token(TOKEN *_token);
+
 class Generator {
 public:
   map<string, int> variables;
@@ -32,6 +34,8 @@ public:
   string generate_stmt(AST *_ast);
   string generate_expr(AST *_ast);
   string generate_assign(AST *_ast);
+  string generate_constant(AST *_ast);
+  string generate_identifier(AST *_ast);
 };
 
 #endif

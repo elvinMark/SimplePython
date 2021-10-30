@@ -1,5 +1,13 @@
 #include <spy/generator/generator.hpp>
 
+string get_string_from_token(TOKEN *_token) {
+  if (!is_token(_token, _DATA_STRING) && !is_token(_token, _VAR)) {
+    assert_error(ERR_WRONG_TOKEN);
+    return "";
+  }
+  return string(_token->_data->_string);
+}
+
 Generator::Generator() {}
 
 string Generator::code_from_file(string path_to_file) {
@@ -43,16 +51,67 @@ string Generator::generate_stmt(AST *_ast) {
   if (!is_ast(_ast, AST_STMT)) {
     assert_error(ERR_WRONG_AST);
   }
-
-  return _code;
-}
-
-string Generator::generate_expr(AST *_ast) {
-  string _code = "";
+  if (is_ast(_ast->_first_child, AST_ASSIGN))
+    _code += this->generate_assign(_ast->_first_child);
   return _code;
 }
 
 string Generator::generate_assign(AST *_ast) {
   string _code = "";
+  if (!is_ast(_ast, AST_ASSIGN)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  AST *_expr1 = _ast->_first_child;
+  AST *_expr2 = _expr1 == NULL ? NULL : _expr1->_next;
+
+  if (is_ast(_expr1->_first_child, AST_IDENTIFIER)) {
+    _code += this->generate_expr(_expr1);
+    _code += " = ";
+    _code += this->generate_expr(_expr2);
+    _code += ";";
+  } else
+    assert_error(ERR_NOT_IMPLEMENTED);
+  return _code;
+}
+
+string Generator::generate_expr(AST *_ast) {
+  string _code = "";
+  if (!is_ast(_ast, AST_EXPR)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  if (is_ast(_ast->_first_child, AST_CONSTANT))
+    _code += this->generate_constant(_ast->_first_child);
+  else if (is_ast(_ast->_first_child, AST_IDENTIFIER))
+    _code += this->generate_identifier(_ast->_first_child);
+  else
+    assert_error(ERR_NOT_IMPLEMENTED);
+
+  return _code;
+}
+
+string Generator::generate_identifier(AST *_ast) {
+  if (!is_ast(_ast, AST_IDENTIFIER)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  return get_string_from_token(_ast->_token);
+}
+
+string Generator::generate_constant(AST *_ast) {
+  string _code = "";
+  if (!is_ast(_ast, AST_CONSTANT)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  if (is_token(_ast->_token, _DATA_INTEGER)) {
+    _code += "create_integer_object(" +
+             to_string(_ast->_token->_data->_integer) + ")";
+  } else if (is_token(_ast->_token, _DATA_REAL)) {
+    _code +=
+        "create_real_object(" + to_string(_ast->_token->_data->_real) + ")";
+  } else if (is_token(_ast->_token, _DATA_STRING)) {
+    _code += "create_string_object(\"" + string(_ast->_token->_data->_string) +
+             "\")";
+  } else {
+    assert_error(ERR_WRONG_TOKEN);
+  }
   return _code;
 }

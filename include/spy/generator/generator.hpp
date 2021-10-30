@@ -39,6 +39,10 @@ public:
   string generate_binop(AST *_ast);
   string generate_boolop(AST *_ast);
   string generate_cmpop(AST *_ast);
+  string generate_if(AST *_ast);
+  string generate_functiondef(AST *_ast);
+  string generate_return(AST *_ast);
+  string generate_call(AST *_ast);
 };
 
 #endif

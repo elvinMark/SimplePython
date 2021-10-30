@@ -53,6 +53,5 @@ _object *gt_object(_object *_o1, _object *_o2);
 _object *gte_object(_object *_o1, _object *_o2);
 _object *eq_object(_object *_o1, _object *_o2);
 _object *in_object(_object *_o1, _object *_o2);
-_object *str_object(_object *_o1);
 
 #endif

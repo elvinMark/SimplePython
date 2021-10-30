@@ -442,8 +442,8 @@ AST *parse_expr(TOKEN **tokens) {
       }
     }
   }
-  if (is_token(*tokens, _ENDL))
-    consume_token(tokens, _ENDL);
+  // if (is_token(*tokens, _ENDL))
+  //   consume_token(tokens, _ENDL);
   return _ast;
 }
 

@@ -1,1 +1,1 @@
-x = "hello"
+x = x * y * z

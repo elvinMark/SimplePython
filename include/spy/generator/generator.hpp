@@ -36,6 +36,9 @@ public:
   string generate_assign(AST *_ast);
   string generate_constant(AST *_ast);
   string generate_identifier(AST *_ast);
+  string generate_binop(AST *_ast);
+  string generate_boolop(AST *_ast);
+  string generate_cmpop(AST *_ast);
 };
 
 #endif

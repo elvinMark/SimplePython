@@ -91,6 +91,7 @@ int is_token_binop(TOKEN *token);
 int is_token_cmpop(TOKEN *token);
 int is_ast(AST *_ast, int _type);
 int is_prev_ast(AST *_ast, int _type);
+int is_expr(AST *_ast);
 int is_last_child_expr(AST *_ast);
 
 AST *parse(TOKEN **tokens);

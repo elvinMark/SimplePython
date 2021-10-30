@@ -76,13 +76,17 @@ string Generator::generate_assign(AST *_ast) {
 
 string Generator::generate_expr(AST *_ast) {
   string _code = "";
-  if (!is_ast(_ast, AST_EXPR)) {
+  if (!is_expr(_ast)) {
     assert_error(ERR_WRONG_AST);
   }
-  if (is_ast(_ast->_first_child, AST_CONSTANT))
-    _code += this->generate_constant(_ast->_first_child);
-  else if (is_ast(_ast->_first_child, AST_IDENTIFIER))
-    _code += this->generate_identifier(_ast->_first_child);
+  if (is_ast(_ast, AST_EXPR)) {
+    _code = this->generate_expr(_ast->_first_child);
+  } else if (is_ast(_ast, AST_CONSTANT))
+    _code += this->generate_constant(_ast);
+  else if (is_ast(_ast, AST_IDENTIFIER))
+    _code += this->generate_identifier(_ast);
+  else if (is_ast(_ast, AST_BINOP))
+    _code += this->generate_binop(_ast);
   else
     assert_error(ERR_NOT_IMPLEMENTED);
 
@@ -113,5 +117,102 @@ string Generator::generate_constant(AST *_ast) {
   } else {
     assert_error(ERR_WRONG_TOKEN);
   }
+  return _code;
+}
+
+string Generator::generate_binop(AST *_ast) {
+  if (!is_ast(_ast, AST_BINOP)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  AST *_expr = _ast->_first_child;
+  AST *_expr1 = _expr->_first_child;
+  AST *_expr2 = _expr1 == NULL ? NULL : _expr1->_next;
+  string _code = "";
+
+  _code = "_object(" + this->generate_expr(_expr1) + "," +
+          this->generate_expr(_expr2) + ")";
+  if (is_ast(_expr, AST_ADD)) {
+    _code = "add" + _code;
+  } else if (is_ast(_expr, AST_SUB)) {
+    _code = "sub" + _code;
+  } else if (is_ast(_expr, AST_MULT)) {
+    _code = "mult" + _code;
+  } else if (is_ast(_expr, AST_DIV)) {
+    _code = "div" + _code;
+  } else if (is_ast(_expr, AST_POW)) {
+    _code = "pow" + _code;
+  } else if (is_ast(_expr, AST_BITAND)) {
+    _code = "bitand" + _code;
+  } else if (is_ast(_expr, AST_BITOR)) {
+    _code = "bitor" + _code;
+  } else if (is_ast(_expr, AST_BITXOR)) {
+    _code = "bitxor" + _code;
+  } else if (is_ast(_expr, AST_MOD)) {
+    _code = "mod" + _code;
+  } else if (is_ast(_expr, AST_LSHIFT)) {
+    _code = "lshift" + _code;
+  } else if (is_ast(_expr, AST_RSHIFT)) {
+    _code = "rshift" + _code;
+  } else
+    assert_error(ERR_WRONG_TOKEN);
+
+  return _code;
+}
+
+string Generator::generate_boolop(AST *_ast) {
+  if (!is_ast(_ast, AST_BOOLOP)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  AST *_expr = _ast->_first_child;
+  AST *_expr1 = _expr->_first_child;
+  AST *_expr2 = _expr1 == NULL ? NULL : _expr1->_next;
+  string _code = "";
+
+  _code = "_object(" + this->generate_expr(_expr1) + "," +
+          this->generate_expr(_expr2) + ")";
+  if (is_ast(_expr, AST_ADD)) {
+    _code = "add" + _code;
+  } else if (is_ast(_expr, AST_SUB)) {
+    _code = "sub" + _code;
+  } else if (is_ast(_expr, AST_MULT)) {
+    _code = "mult" + _code;
+  } else if (is_ast(_expr, AST_DIV)) {
+    _code = "div" + _code;
+  } else if (is_ast(_expr, AST_POW)) {
+    _code = "pow" + _code;
+  } else if (is_ast(_expr, AST_AND)) {
+    _code = "pow" + _code;
+  } else
+    assert_error(ERR_WRONG_TOKEN);
+
+  return _code;
+}
+
+string Generator::generate_cmpop(AST *_ast) {
+  if (!is_ast(_ast, AST_CMPOP)) {
+    assert_error(ERR_WRONG_AST);
+  }
+  AST *_expr = _ast->_first_child;
+  AST *_expr1 = _expr->_first_child;
+  AST *_expr2 = _expr1 == NULL ? NULL : _expr1->_next;
+  string _code = "";
+
+  _code = "_object(" + this->generate_expr(_expr1) + "," +
+          this->generate_expr(_expr2) + ")";
+  if (is_ast(_expr, AST_ADD)) {
+    _code = "add" + _code;
+  } else if (is_ast(_expr, AST_SUB)) {
+    _code = "sub" + _code;
+  } else if (is_ast(_expr, AST_MULT)) {
+    _code = "mult" + _code;
+  } else if (is_ast(_expr, AST_DIV)) {
+    _code = "div" + _code;
+  } else if (is_ast(_expr, AST_POW)) {
+    _code = "pow" + _code;
+  } else if (is_ast(_expr, AST_AND)) {
+    _code = "pow" + _code;
+  } else
+    assert_error(ERR_WRONG_TOKEN);
+
   return _code;
 }

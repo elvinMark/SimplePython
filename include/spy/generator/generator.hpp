@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <map>
+#include <set>
 #include <spy/generator/ast.hpp>
 #include <spy/generator/token.hpp>
 #include <spy/utils/constants.hpp>
@@ -19,7 +20,10 @@ string get_string_from_token(TOKEN *_token);
 
 class Generator {
 public:
-  map<string, int> variables;
+  set<string> _variables;
+  string _header;
+  string _code;
+  string _main_code;
 
 public:
   Generator();
@@ -29,6 +33,8 @@ public:
   string code_from_string(string code);
   string code_from_file(string path_to_file);
 
+  string generate_header();
+  string generate_variables();
   string generate_module(AST *_ast);
   string generate_stmts(AST *_ast);
   string generate_stmt(AST *_ast);

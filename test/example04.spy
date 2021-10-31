@@ -1,5 +1,21 @@
-def fib(n):
-    if n<2:
-        return 1
-    else:
-        return fib(n-1) + fib(n-2)
+#
+# a b
+# c d
+#
+def det(a,b,c,d):
+    a = a*d
+    b = b*c
+    return a - b
+
+def solver(a,b,c,d,e,f,tmp):
+    tmp = det(e,b,f,d) / det(a,b,c,d)
+    print("x: " + str(tmp))
+    tmp = det(a,e,c,f) / det(a,b,c,d);
+    print("y: " + str(tmp))
+    return 0
+#
+#  x + 2y = 5
+# 3x + 3y = 9
+#
+
+solver(1,2,3,3,5,9,0)

@@ -25,8 +25,24 @@ string Generator::code_from_tokens(TOKEN *tokens) {
 }
 
 string Generator::code_from_ast(AST *_ast) {
-  this->variables = map<string, int>();
-  return this->generate_module(_ast);
+  this->_variables = set<string>();
+  this->_code = "";
+  this->_main_code = this->generate_module(_ast);
+  return this->generate_header() + this->_code + "int main() {\n" +
+         this->generate_variables() + this->_main_code + "\n return 0;}";
+}
+
+string Generator::generate_header() {
+  return "#include <spy/core/object.hpp>\n#include "
+         "<spy/core/spy_standard.hpp>\n";
+}
+
+string Generator::generate_variables() {
+  string _code = "";
+  for (set<string>::iterator it = this->_variables.begin();
+       it != this->_variables.end(); ++it)
+    _code += "_object* " + *it + ";\n";
+  return _code;
 }
 
 string Generator::generate_module(AST *_ast) {
@@ -38,12 +54,16 @@ string Generator::generate_module(AST *_ast) {
 
 string Generator::generate_stmts(AST *_ast) {
   string _code = "";
+  string _tmp;
   if (!is_ast(_ast, AST_STMTS)) {
     cout << "stmts " << endl;
     assert_error(ERR_WRONG_AST);
   }
-  for (AST *_dummy = _ast->_first_child; _dummy != NULL; _dummy = _dummy->_next)
-    _code.append(this->generate_stmt(_dummy));
+  for (AST *_dummy = _ast->_first_child; _dummy != NULL;
+       _dummy = _dummy->_next) {
+    _tmp = this->generate_stmt(_dummy);
+    _code.append(_tmp);
+  }
   return _code;
 }
 
@@ -53,9 +73,9 @@ string Generator::generate_stmt(AST *_ast) {
     cout << "stmt " << endl;
     assert_error(ERR_WRONG_AST);
   }
-  if (is_ast(_ast->_first_child, AST_ASSIGN))
+  if (is_ast(_ast->_first_child, AST_ASSIGN)) {
     _code += this->generate_assign(_ast->_first_child);
-  else if (is_ast(_ast->_first_child, AST_IF))
+  } else if (is_ast(_ast->_first_child, AST_IF))
     _code += this->generate_if(_ast->_first_child);
   else if (is_ast(_ast->_first_child, AST_EXPR))
     _code += this->generate_expr(_ast->_first_child);
@@ -64,7 +84,6 @@ string Generator::generate_stmt(AST *_ast) {
   else if (is_ast(_ast->_first_child, AST_RETURN))
     _code += this->generate_return(_ast->_first_child);
   else {
-    cout << "stmt2: " << _ast->_first_child->_type << endl;
     assert_error(ERR_WRONG_AST);
   }
   _code += ";\n";
@@ -81,6 +100,9 @@ string Generator::generate_assign(AST *_ast) {
 
   if (is_ast(_expr1->_first_child, AST_IDENTIFIER)) {
     _code += this->generate_expr(_expr1);
+    /////////////////////////////////////////
+    this->_variables.insert(_code);
+    /////////////////////////////////////////
     _code += " = ";
     _code += this->generate_expr(_expr2);
   } else
@@ -282,7 +304,9 @@ string Generator::generate_functiondef(AST *_ast) {
   }
   _stmts = this->generate_stmts(_stmts_body);
   _code += "_object* " + _fun_id + "(" + _args + ") {\n" + _stmts + "}\n";
-  return _code;
+  this->_code += _code;
+  return "";
+  // return _code;
 }
 
 string Generator::generate_return(AST *_ast) {
@@ -308,7 +332,10 @@ string Generator::generate_call(AST *_ast) {
   AST *_exprs_args = _expr_fun_id->_next;
 
   _fun_id = get_string_from_token(_expr_fun_id->_token);
-
+  if (_fun_id == "str" || _fun_id == "input" || _fun_id == "int" ||
+      _fun_id == "float" || _fun_id == "print") {
+    _fun_id += "_object";
+  }
   for (AST *_dummy = _exprs_args->_first_child; _dummy != NULL;
        _dummy = _dummy->_next) {
     _exprs += this->generate_expr(_dummy);

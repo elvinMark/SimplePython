@@ -19,3 +19,11 @@ char *str_to_chr(string s) {
   chrs[s.length()] = '\0';
   return chrs;
 }
+
+void write_file(string content, string path_to_file) {
+  ofstream ofs;
+  ofs.open(path_to_file);
+  if (ofs.is_open())
+    ofs << content;
+  ofs.close();
+}

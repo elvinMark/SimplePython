@@ -7,6 +7,7 @@
 using namespace std;
 
 string read_file(string path_to_file);
+void write_file(string content, string path_to_file);
 char *str_to_chr(string s);
 
 #endif

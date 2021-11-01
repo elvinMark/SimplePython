@@ -31,9 +31,10 @@ _object *str_object(_object *_o1) {
   } else if (_o1->_type == LIST_OBJECT) {
     s = "[";
     _list_object *l = get_list(_o1);
-    for (int i = 0; i < l->length; i++) {
-      s += get_string(str_object(l->arr[i]));
-      if (i != l->length - 1)
+    int tot = l->size();
+    for (int i = 0; i < tot; i++) {
+      s += get_string(str_object(l->at(i)));
+      if (i != tot - 1)
         s += ",";
     }
     s += "]";
@@ -51,7 +52,7 @@ _object *int_object(_object *_o1) {
   return create_integer_object(d);
 }
 
-_object *flaot_object(_object *_o1) {
+_object *float_object(_object *_o1) {
   float f = 0;
   if (_o1->_type == STRING_OBJECT)
     f = stof(get_string(_o1));

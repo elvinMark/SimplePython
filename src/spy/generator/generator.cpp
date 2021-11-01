@@ -77,6 +77,10 @@ string Generator::generate_stmt(AST *_ast) {
     _code += this->generate_assign(_ast->_first_child);
   } else if (is_ast(_ast->_first_child, AST_IF))
     _code += this->generate_if(_ast->_first_child);
+  else if (is_ast(_ast->_first_child, AST_WHILE))
+    _code += this->generate_while(_ast->_first_child);
+  else if (is_ast(_ast->_first_child, AST_FOR))
+    _code += this->generate_for(_ast->_first_child);
   else if (is_ast(_ast->_first_child, AST_EXPR))
     _code += this->generate_expr(_ast->_first_child);
   else if (is_ast(_ast->_first_child, AST_FUNCTIONDEF)) {
@@ -137,6 +141,10 @@ string Generator::generate_expr(AST *_ast) {
     _code += this->generate_call(_ast);
   else if (is_ast(_ast, AST_LIST))
     _code += this->generate_list(_ast);
+  else if (is_ast(_ast, AST_DICT))
+    _code += this->generate_dict(_ast);
+  else if (is_ast(_ast, AST_SUBSCRIPT))
+    _code += this->generate_subscript(_ast);
   else
     assert_error(ERR_NOT_IMPLEMENTED);
 
@@ -363,10 +371,65 @@ string Generator::generate_list(AST *_ast) {
     assert_error(ERR_WRONG_AST);
   AST *_exprs_ast = _ast->_first_child;
   string _code = "";
-  if (!is_ast(_ast, AST_EXPRS))
+  if (!is_ast(_exprs_ast, AST_EXPRS))
     assert_error(ERR_WRONG_AST);
-  // FIXME
+  _code += "create_list_object(";
   for (AST *_dummy = _exprs_ast->_first_child; _dummy != NULL;
        _dummy = _dummy->_next) {
+    _code += this->generate_expr(_dummy) + ",";
   }
+  _code += "NULL)";
+  return _code;
+}
+
+string Generator::generate_while(AST *_ast) {
+  if (!is_ast(_ast, AST_WHILE))
+    assert_error(ERR_WRONG_AST);
+  string _code = "";
+  AST *_condition_ast = _ast->_first_child;
+  AST *_stmts_ast = _condition_ast->_next;
+  _code += "while(get_integer(" + this->generate_expr(_condition_ast) + ")){\n";
+  _code += this->generate_stmts(_stmts_ast) + "}";
+  return _code;
+}
+
+string Generator::generate_for(AST *_ast) {
+  if (!is_ast(_ast, AST_FOR))
+    assert_error(ERR_WRONG_AST);
+  string _code = "";
+  AST *_iterator_ast = _ast->_first_child;
+  AST *_stmts_ast = _iterator_ast->_next;
+  AST *_id = _iterator_ast->_first_child;
+  AST *_iterator = _id->_next;
+  string _iter_id = this->generate_identifier(_id);
+  _code += "_object* " + _iter_id + ";\n";
+  _code += "_list_object* __iter__ = get_list(" +
+           this->generate_expr(_iterator) + ");\n";
+  _code += "  for (int _i_ = 0; _i_ < __iter__->size(); _i_ ++){\n";
+  _code += _iter_id + "= __iter__->at(_i_);\n";
+  _code += this->generate_stmts(_stmts_ast);
+  _code += "}";
+  return _code;
+}
+
+string Generator::generate_dict(AST *_ast) {
+  // FIXME
+  if (!is_ast(_ast, AST_DICT))
+    assert_error(ERR_WRONG_AST);
+  string _code = "";
+  return _code;
+}
+
+string Generator::generate_subscript(AST *_ast) {
+  // FIXME
+  if (!is_ast(_ast, AST_SUBSCRIPT))
+    assert_error(ERR_WRONG_AST);
+  string _code = "";
+  AST *_id_ast = _ast->_first_child;
+  AST *_slice_ast = _id_ast->_next;
+  AST *_expr_ast = _slice_ast->_first_child;
+  _code += "get_list(" + this->generate_identifier(_id_ast) + ")->at(" +
+           "get_integer(" + this->generate_expr(_expr_ast) + "))";
+
+  return _code;
 }

@@ -63,14 +63,25 @@ _object *create_integer_object(int d) {
 _object *create_real_object(float f) {
   float *_f = (float *)malloc(sizeof(float));
   *_f = f;
-  return create_object(&f, REAL_OBJECT);
+  return create_object(_f, REAL_OBJECT);
 }
 
 _object *create_string_object(string s) {
   return create_object(new string(s), STRING_OBJECT);
 }
 
-_object *create_list(_list_object *l) { return create_object(l, LIST_OBJECT); }
+_object *create_list_object(_list_object *l) {
+  return create_object(l, LIST_OBJECT);
+}
+
+_object *create_list_object(_object *_o, ...) {
+  va_list vl;
+  va_start(vl, _o);
+  _list_object *l = new _list_object();
+  for (; _o != NULL; _o = va_arg(vl, _object *))
+    l->push_back(_o);
+  return create_list_object(l);
+}
 
 _object *add_object(_object *_o1, _object *_o2) {
   if (are_integer(_o1, _o2)) {
@@ -85,6 +96,15 @@ _object *add_object(_object *_o1, _object *_o2) {
     return create_real_object(f);
   } else if (are_string(_o1, _o2)) {
     return create_string_object(get_string(_o1) + get_string(_o2));
+  } else if (are_list(_o1, _o2)) {
+    _list_object *l = new _list_object();
+    _list_object *l1 = get_list(_o1);
+    _list_object *l2 = get_list(_o2);
+    for (int i = 0; i < l1->size(); i++)
+      l->push_back(l1->at(i));
+    for (int i = 0; i < l2->size(); i++)
+      l->push_back(l2->at(i));
+    return create_list_object(l);
   } else {
     assert_error(ERR_NOT_IMPLEMENTED);
     return NULL;

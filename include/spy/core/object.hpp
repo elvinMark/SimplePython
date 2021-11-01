@@ -5,8 +5,9 @@
 #include <math.h>
 #include <spy/utils/constants.hpp>
 #include <spy/utils/error.hpp>
+#include <stdarg.h>
 #include <string>
-
+#include <vector>
 using namespace std;
 
 typedef struct _object {
@@ -14,10 +15,7 @@ typedef struct _object {
   int _type;
 } _object;
 
-typedef struct _list_object {
-  _object **_arr;
-  int _length;
-} _list_object;
+typedef vector<_object *> _list_object;
 
 enum TYPE_DATA {
   INTEGER_OBJECT,
@@ -48,7 +46,8 @@ _object *create_object(void *_data, int _type);
 _object *create_integer_object(int d);
 _object *create_real_object(float f);
 _object *create_string_object(string s);
-_object *create_list(_list_object *l);
+_object *create_list_object(_list_object *l);
+_object *create_list_object(_object *_o, ...);
 
 _object *add_object(_object *_o1, _object *_o2);
 _object *sub_object(_object *_o1, _object *_o2);

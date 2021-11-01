@@ -52,6 +52,10 @@ public:
   string generate_return(AST *_ast);
   string generate_call(AST *_ast);
   string generate_list(AST *_ast);
+  string generate_while(AST *_ast);
+  string generate_for(AST *_ast);
+  string generate_dict(AST *_ast);
+  string generate_subscript(AST *_ast);
 };
 
 #endif

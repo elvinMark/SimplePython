@@ -292,6 +292,7 @@ AST *parse_expr(TOKEN **tokens) {
     } else if (is_token_binop(*tokens)) {
       // BINOP
       if (!is_last_child_expr(_ast)) {
+        cout << (*tokens)->_type << endl;
         assert_error(ERR_WRONG_TOKEN);
         exit(-1);
       }

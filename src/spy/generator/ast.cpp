@@ -259,6 +259,14 @@ AST *parse_expr(TOKEN **tokens) {
         consume_token(tokens, _CLOSE_ROUND_BRACKET);
         push_child(_call, _exprs);
         push_child(_ast, _call);
+      } else {
+        AST *_expr = create_ast(AST_EXPR, NULL);
+        consume_token(tokens, _OPEN_ROUND_BRACKET);
+        while (!is_token(*tokens, _CLOSE_ROUND_BRACKET)) {
+          push_child(_expr, parse_expr(tokens));
+        }
+        consume_token(tokens, _CLOSE_ROUND_BRACKET);
+        push_child(_ast, _expr);
       }
     } else if (is_token(*tokens, _LAMBDA)) {
       push_child(_ast, parse_lambda(tokens));

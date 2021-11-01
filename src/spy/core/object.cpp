@@ -4,6 +4,7 @@ int is_integer(_object *_o1) { return _o1->_type == INTEGER_OBJECT; }
 int is_real(_object *_o1) { return _o1->_type == REAL_OBJECT; }
 int is_string(_object *_o1) { return _o1->_type == STRING_OBJECT; }
 int is_number(_object *_o1) { return is_integer(_o1) || is_real(_o1); }
+int is_list(_object *o1) { return o1->_type == LIST_OBJECT; }
 
 int are_integer(_object *_o1, _object *_o2) {
   return is_integer(_o1) && is_integer(_o2);
@@ -16,6 +17,10 @@ int are_string(_object *_o1, _object *_o2) {
 }
 int are_number(_object *_o1, _object *_o2) {
   return is_number(_o1) && is_number(_o2);
+}
+
+int are_list(_object *_o1, _object *_o2) {
+  return is_list(_o1) && is_list(_o2);
 }
 
 int get_integer(_object *_o1) {
@@ -34,6 +39,12 @@ string get_string(_object *_o1) {
   if (_o1->_type != STRING_OBJECT)
     assert_error(ERR_WRONG_CASTING);
   return *((string *)_o1->_data);
+}
+
+_list_object *get_list(_object *_o1) {
+  if (_o1->_type != LIST_OBJECT)
+    assert_error(ERR_WRONG_CASTING);
+  return (_list_object *)_o1->_data;
 }
 
 _object *create_object(void *_data, int _type) {
@@ -59,8 +70,7 @@ _object *create_string_object(string s) {
   return create_object(new string(s), STRING_OBJECT);
 }
 
-_object *create_real_object(float f);
-_object *create_string_object(string s);
+_object *create_list(_list_object *l) { return create_object(l, LIST_OBJECT); }
 
 _object *add_object(_object *_o1, _object *_o2) {
   if (are_integer(_o1, _o2)) {

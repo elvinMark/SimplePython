@@ -28,6 +28,15 @@ _object *str_object(_object *_o1) {
     s = to_string(get_real(_o1));
   } else if (_o1->_type == STRING_OBJECT) {
     return _o1;
+  } else if (_o1->_type == LIST_OBJECT) {
+    s = "[";
+    _list_object *l = get_list(_o1);
+    for (int i = 0; i < l->length; i++) {
+      s += get_string(str_object(l->arr[i]));
+      if (i != l->length - 1)
+        s += ",";
+    }
+    s += "]";
   } else
     assert_error(ERR_NOT_IMPLEMENTED);
   return create_string_object(s);

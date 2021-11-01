@@ -20,7 +20,9 @@ string get_string_from_token(TOKEN *_token);
 
 class Generator {
 public:
+  set<string> _local_variables;
   set<string> _variables;
+  int _is_local;
   string _header;
   string _code;
   string _main_code;
@@ -49,6 +51,7 @@ public:
   string generate_functiondef(AST *_ast);
   string generate_return(AST *_ast);
   string generate_call(AST *_ast);
+  string generate_list(AST *_ast);
 };
 
 #endif

@@ -8,7 +8,7 @@ string get_string_from_token(TOKEN *_token) {
   return string(_token->_data->_string);
 }
 
-Generator::Generator() {}
+Generator::Generator() { this->_is_local = 0; }
 
 string Generator::code_from_file(string path_to_file) {
   return this->code_from_string(read_file(path_to_file));
@@ -79,9 +79,9 @@ string Generator::generate_stmt(AST *_ast) {
     _code += this->generate_if(_ast->_first_child);
   else if (is_ast(_ast->_first_child, AST_EXPR))
     _code += this->generate_expr(_ast->_first_child);
-  else if (is_ast(_ast->_first_child, AST_FUNCTIONDEF))
+  else if (is_ast(_ast->_first_child, AST_FUNCTIONDEF)) {
     _code += this->generate_functiondef(_ast->_first_child);
-  else if (is_ast(_ast->_first_child, AST_RETURN))
+  } else if (is_ast(_ast->_first_child, AST_RETURN))
     _code += this->generate_return(_ast->_first_child);
   else {
     assert_error(ERR_WRONG_AST);
@@ -101,7 +101,10 @@ string Generator::generate_assign(AST *_ast) {
   if (is_ast(_expr1->_first_child, AST_IDENTIFIER)) {
     _code += this->generate_expr(_expr1);
     /////////////////////////////////////////
-    this->_variables.insert(_code);
+    if (this->_is_local)
+      this->_local_variables.insert(_code);
+    else
+      this->_variables.insert(_code);
     /////////////////////////////////////////
     _code += " = ";
     _code += this->generate_expr(_expr2);
@@ -132,6 +135,8 @@ string Generator::generate_expr(AST *_ast) {
     _code += this->generate_cmpop(_ast);
   else if (is_ast(_ast, AST_CALL))
     _code += this->generate_call(_ast);
+  else if (is_ast(_ast, AST_LIST))
+    _code += this->generate_list(_ast);
   else
     assert_error(ERR_NOT_IMPLEMENTED);
 
@@ -302,8 +307,14 @@ string Generator::generate_functiondef(AST *_ast) {
     if (_dummy->_next != NULL)
       _args += ",";
   }
+  this->_is_local = 1;
   _stmts = this->generate_stmts(_stmts_body);
-  _code += "_object* " + _fun_id + "(" + _args + ") {\n" + _stmts + "}\n";
+  this->_is_local = 0;
+  string _lv = "";
+  for (set<string>::iterator it = this->_local_variables.begin();
+       it != this->_local_variables.end(); ++it)
+    _lv += "_object* " + *it + ";\n";
+  _code += "_object* " + _fun_id + "(" + _args + ") {\n" + _lv + _stmts + "}\n";
   this->_code += _code;
   return "";
   // return _code;
@@ -345,4 +356,17 @@ string Generator::generate_call(AST *_ast) {
 
   _code += _fun_id + "(" + _exprs + ")";
   return _code;
+}
+
+string Generator::generate_list(AST *_ast) {
+  if (!is_ast(_ast, AST_LIST))
+    assert_error(ERR_WRONG_AST);
+  AST *_exprs_ast = _ast->_first_child;
+  string _code = "";
+  if (!is_ast(_ast, AST_EXPRS))
+    assert_error(ERR_WRONG_AST);
+  // FIXME
+  for (AST *_dummy = _exprs_ast->_first_child; _dummy != NULL;
+       _dummy = _dummy->_next) {
+  }
 }

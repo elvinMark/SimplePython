@@ -28,8 +28,8 @@ string Generator::code_from_ast(AST *_ast) {
   this->_variables = set<string>();
   this->_code = "";
   this->_main_code = this->generate_module(_ast);
-  return this->generate_header() + this->_code + "int main() {\n" +
-         this->generate_variables() + this->_main_code + "\n return 0;}";
+  return this->generate_header() + this->generate_variables() + this->_code +
+         "int main() {\n" + this->_main_code + "\n return 0;}";
 }
 
 string Generator::generate_header() {
@@ -112,6 +112,14 @@ string Generator::generate_assign(AST *_ast) {
     /////////////////////////////////////////
     _code += " = ";
     _code += this->generate_expr(_expr2);
+  } else if (is_ast(_expr1->_first_child, AST_SUBSCRIPT)) {
+    AST *_subs_ast = _expr1->_first_child;
+    AST *_id_ast = _subs_ast->_first_child;
+    AST *_slice_ast = _id_ast->_next;
+    _code += "get_list(" + this->generate_identifier(_id_ast) + ")->at(";
+    _code += "get_integer(" + this->generate_expr(_slice_ast->_first_child) +
+             ")) = ";
+    _code += this->generate_expr(_expr2) + ";";
   } else
     assert_error(ERR_NOT_IMPLEMENTED);
   return _code;
